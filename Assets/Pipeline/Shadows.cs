@@ -211,8 +211,7 @@ namespace Graphics
         void RenderDirectionalShadows(int index, int split, int tileSize)
         {
             var light = ShadowedDirectionalLights[index];
-            var shadowSettings = 
-                new ShadowDrawingSettings(_cullingResults, light.visibleLightIndex);
+            var shadowSettings = new ShadowDrawingSettings(_cullingResults, light.visibleLightIndex, BatchCullingProjectionType.Perspective);
             var cascadeCount = _shadowSettings.directional.cascadeCount;
             var tileOffset = index * cascadeCount;
             var ratios = _shadowSettings.directional.CascadeRatios;
