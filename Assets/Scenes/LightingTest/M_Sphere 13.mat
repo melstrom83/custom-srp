@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Opaque
+  m_Name: M_Sphere 13
   m_Shader: {fileID: 4800000, guid: c88841eaac6e846c0a3ef463f2eb6848, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
