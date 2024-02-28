@@ -1,24 +1,12 @@
 #ifndef CUSTOM_LIT_PASS_INCLUDED
 #define CUSTOM_LIT_PASS_INCLUDED
 
-#include "../ShaderLibrary/Common.hlsl"
 #include "../ShaderLibrary/Surface.hlsl"
 #include "../ShaderLibrary/Shadows.hlsl"
 #include "../ShaderLibrary/Light.hlsl"
 #include "../ShaderLibrary/BRDF.hlsl"
 #include "../ShaderLibrary/GI.hlsl"
 #include "../ShaderLibrary/Lighting.hlsl"
-
-TEXTURE2D(_BaseMap);
-SAMPLER(sampler_BaseMap);
-
-UNITY_INSTANCING_BUFFER_START(UnityPerMaterial)
-    UNITY_DEFINE_INSTANCED_PROP(float4, _BaseMap_ST)
-    UNITY_DEFINE_INSTANCED_PROP(float4, _BaseColor)
-    UNITY_DEFINE_INSTANCED_PROP(float, _Cutoff)
-    UNITY_DEFINE_INSTANCED_PROP(float, _Metallic)
-    UNITY_DEFINE_INSTANCED_PROP(float, _Smoothness)
-UNITY_INSTANCING_BUFFER_END(UnityPerMaterial)
 
 struct Attribute
 {
@@ -51,9 +39,7 @@ Varying LitPassVertex(Attribute attribute)
     varying.positionCS = TransformWorldToHClip(varying.positionWS);
 
     varying.normalWS = TransformObjectToWorldNormal(attribute.normalOS);
-
-    float4 baseST = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _BaseMap_ST);
-    varying.baseUV = attribute.baseUV * baseST.xy + baseST.zw;
+    varying.baseUV = TransformBaseUV(attribute.baseUV);
     
     return varying;
 }
@@ -62,9 +48,7 @@ float4 LitPassFragment(Varying varying) : SV_TARGET
 {
     UNITY_SETUP_INSTANCE_ID(varying);
 
-    float4 baseMap = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, varying.baseUV);
-    float4 baseColor = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _BaseColor);
-    float4 base = baseMap * baseColor;
+    float4 base = GetBase(varying.baseUV);
 
     Surface surface;
     surface.position = varying.positionWS;
@@ -73,16 +57,16 @@ float4 LitPassFragment(Varying varying) : SV_TARGET
     surface.depth = -TransformWorldToView(varying.positionWS).z;
     surface.color = base.xyz;
     surface.alpha = base.w;
-    surface.metallic = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _Metallic);
-    surface.smoothness = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _Smoothness);
+    surface.metallic = GetMetallic(varying.baseUV);
+    surface.smoothness = GetSmoothness(varying.baseUV);
     
 
     #if defined(_CLIPPING)
-        clip(base.a - UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _Cutoff));
+        clip(base.a - GetClipping(varying.baseUV);
     #endif
 
     BRDF brdf = GetBRDF(surface);
-    GI gi = GetGI(GI_FRAGMENT_DATA(varying));
+    GI gi = GetGI(GI_FRAGMENT_DATA(varying), surface);
     float3 color = GetLighting(surface, brdf, gi);
     return float4(color, surface.alpha);
 }
