@@ -1,3 +1,4 @@
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -45,6 +46,14 @@ namespace Graphics
             "_DIRECTIONAL_PCF7",
         };
 
+        static string[] shadowMasKeywords =
+        {
+            "_SHADOW_MASK_ALWAYS",
+            "_SHADOW_MASK_DISTANCE"
+        };
+
+        bool useShadowMask;
+
         private ScriptableRenderContext _context;
 
         private CommandBuffer _buffer = new CommandBuffer
@@ -52,26 +61,38 @@ namespace Graphics
             name = _bufferName
         };
 
-        public Vector3 ReserveDirectionalShadows(Light light, int visibleLightIndex)
+        public Vector4 ReserveDirectionalShadows(Light light, int visibleLightIndex)
         {
             if (shadowedDirectionalLightCount < shadowedDirectionalLightLimit
             && light.shadows != LightShadows.None
-            && light.shadowStrength > 0.0f
-            && _cullingResults.GetShadowCasterBounds(visibleLightIndex, out var b))
+            && light.shadowStrength > 0.0f)
             {
-                ShadowedDirectionalLights[shadowedDirectionalLightCount] =
-                    new ShadowedDirectionalLight
-                    {
-                        visibleLightIndex = visibleLightIndex,
-                        slopeScaleBias = light.shadowBias,
-                        nearPlaneOffset = light.shadowNearPlane
-                    };
-                return new Vector3(light.shadowStrength, 
-                    _shadowSettings.directional.cascadeCount * shadowedDirectionalLightCount++,
-                    light.shadowNormalBias);
+                var maskChannel = -1;
+                var lightBaking = light.bakingOutput;
+                if(lightBaking.lightmapBakeType == LightmapBakeType.Mixed
+                && lightBaking.mixedLightingMode == MixedLightingMode.Shadowmask)
+                {
+                    useShadowMask = true;
+                    maskChannel = lightBaking.occlusionMaskChannel;
+                }
+
+                if (_cullingResults.GetShadowCasterBounds(visibleLightIndex, out var b))
+                {
+                    ShadowedDirectionalLights[shadowedDirectionalLightCount] =
+                        new ShadowedDirectionalLight
+                        {
+                            visibleLightIndex = visibleLightIndex,
+                            slopeScaleBias = light.shadowBias,
+                            nearPlaneOffset = light.shadowNearPlane
+                        };
+                    return new Vector4(light.shadowStrength,
+                        _shadowSettings.directional.cascadeCount * shadowedDirectionalLightCount++,
+                        light.shadowNormalBias, maskChannel);
+                }
+                return new Vector4(-light.shadowStrength, 0.0f, 0.0f, maskChannel);
             }
 
-            return Vector3.zero;
+            return new Vector4(0f, 0f, 0f, -1f);
         }
 
         public void Setup(ScriptableRenderContext context,
@@ -79,24 +100,24 @@ namespace Graphics
             ShadowSettings shadowSettings)
         {
             shadowedDirectionalLightCount = 0;
+            useShadowMask = false;
             
             _context = context;
             _shadowSettings = shadowSettings;
             _cullingResults = cullingResults;
         }
 
-        void SetKeywords()
+        void SetKeywords(string[] keywords, int enabledIndex) 
         {
-            var enabledIndex = (int)_shadowSettings.directional.filter - 1;
-            for (var i = 0; i < directionalFilterKeywords.Length; ++i)
+            for (var i = 0; i < keywords.Length; ++i)
             {
                 if (i == enabledIndex)
                 {
-                    _buffer.EnableShaderKeyword(directionalFilterKeywords[i]);
+                    _buffer.EnableShaderKeyword(keywords[i]);
                 }
                 else
                 {
-                    _buffer.DisableShaderKeyword(directionalFilterKeywords[i]);
+                    _buffer.DisableShaderKeyword(keywords[i]);
                 }
             }
         }
@@ -132,6 +153,10 @@ namespace Graphics
             _buffer.BeginSample(_bufferName);
             ExecuteBuffer();
 
+            SetKeywords(shadowMasKeywords, useShadowMask ? 
+                QualitySettings.shadowmaskMode == ShadowmaskMode.Shadowmask ?
+                0 : 1 :-1);
+
             var tiles = _shadowSettings.directional.cascadeCount * shadowedDirectionalLightCount;
             var split = tiles <= 1 ? 1 : tiles <= 4 ? 2 : 4;
             var tileSize = atlasSize / split;
@@ -151,7 +176,7 @@ namespace Graphics
                 1.0f / _shadowSettings.MaxDistance,
                 1.0f / _shadowSettings.FadeDistance,
                 1.0f / (1.0f - f * f)));
-            SetKeywords();
+            SetKeywords(directionalFilterKeywords, (int)_shadowSettings.directional.filter - 1);
             _buffer.SetGlobalVector(shadowAtlasSizeId, new Vector4(
                 atlasSize,
                 1.0f / atlasSize));

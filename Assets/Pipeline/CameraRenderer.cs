@@ -68,9 +68,9 @@ namespace Graphics
                 enableDynamicBatching = useDynamicBatching,
                 enableInstancing = useGPUInstancing,
                 perObjectData = PerObjectData.None
-                | PerObjectData.Lightmaps 
-                | PerObjectData.LightProbe 
-                | PerObjectData.LightProbeProxyVolume
+                | PerObjectData.Lightmaps | PerObjectData.ShadowMask
+                | PerObjectData.LightProbe | PerObjectData.OcclusionProbe
+                | PerObjectData.LightProbeProxyVolume | PerObjectData.OcclusionProbeProxyVolume
             };
             drawingSettings.SetShaderPassName(1, litShaderTagId);
             var filteringSettings = new FilteringSettings(RenderQueueRange.all);
