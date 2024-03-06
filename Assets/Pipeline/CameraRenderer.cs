@@ -68,6 +68,7 @@ namespace Graphics
                 enableDynamicBatching = useDynamicBatching,
                 enableInstancing = useGPUInstancing,
                 perObjectData = PerObjectData.None
+                | PerObjectData.ReflectionProbes
                 | PerObjectData.Lightmaps | PerObjectData.ShadowMask
                 | PerObjectData.LightProbe | PerObjectData.OcclusionProbe
                 | PerObjectData.LightProbeProxyVolume | PerObjectData.OcclusionProbeProxyVolume

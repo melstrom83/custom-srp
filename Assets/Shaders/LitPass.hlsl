@@ -59,6 +59,7 @@ float4 LitPassFragment(Varying varying) : SV_TARGET
     surface.alpha = base.w;
     surface.metallic = GetMetallic(varying.baseUV);
     surface.smoothness = GetSmoothness(varying.baseUV);
+    surface.fresnelStrength = GetFresnel(varying.baseUV);
     
 
     #if defined(_CLIPPING)
@@ -66,7 +67,7 @@ float4 LitPassFragment(Varying varying) : SV_TARGET
     #endif
 
     BRDF brdf = GetBRDF(surface);
-    GI gi = GetGI(GI_FRAGMENT_DATA(varying), surface);
+    GI gi = GetGI(GI_FRAGMENT_DATA(varying), surface, brdf);
     float3 color = GetLighting(surface, brdf, gi);
     color += GetEmission(varying.baseUV);
     return float4(color, surface.alpha);
