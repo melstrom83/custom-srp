@@ -12,6 +12,7 @@ struct Attribute
 {
     float3 positionOS : POSITION;
     float3 normalOS : NORMAL;
+    float4 tangentOS : TANGENT;
     float2 baseUV : TEXCOORD0;
     GI_ATTRIBUTE_DATA
     UNITY_VERTEX_INPUT_INSTANCE_ID
@@ -22,7 +23,11 @@ struct Varying
     float4 positionCS : SV_POSITION;
     float3 positionWS : POSITION_WS;
     float3 normalWS : NORMAL_WS;
+#if defined (_NORMAL_MAP)
+    float4 tangentWS : TANGENT_WS;
+#endif
     float2 baseUV : TEXCOORD0;
+    float2 detailUV : TEXCOORD1;
     GI_VARYING_DATA
     UNITY_VERTEX_INPUT_INSTANCE_ID
 };
@@ -39,7 +44,13 @@ Varying LitPassVertex(Attribute attribute)
     varying.positionCS = TransformWorldToHClip(varying.positionWS);
 
     varying.normalWS = TransformObjectToWorldNormal(attribute.normalOS);
+#if defined (_NORMAL_MAP) 
+    varying.tangentWS.xyz = TransformObjectToWorldDir(attribute.tangentOS);
+    varying.tangentWS.w = attribute.tangentOS.w;
+#endif 
     varying.baseUV = TransformBaseUV(attribute.baseUV);
+    varying.detailUV = TransformDetailUV(attribute.baseUV);
+    
     
     return varying;
 }
@@ -48,17 +59,25 @@ float4 LitPassFragment(Varying varying) : SV_TARGET
 {
     UNITY_SETUP_INSTANCE_ID(varying);
 
-    float4 base = GetBase(varying.baseUV);
+    float4 base = GetBase(varying.baseUV, varying.detailUV);
 
     Surface surface;
     surface.position = varying.positionWS;
+#if defined (_NORMAL_MAP)
+    surface.normal = NormalTangentToWorld(
+      GetNormalTS(varying.baseUV, varying.detailUV), varying.normalWS, varying.tangentWS);
+    surface.interpolatedNormal = varying.normalWS;
+#else
     surface.normal = normalize(varying.normalWS);
+    surface.interpolatedNormal = surface.normal;
+#endif
     surface.view = normalize(_WorldSpaceCameraPos - varying.positionWS);
     surface.depth = -TransformWorldToView(varying.positionWS).z;
     surface.color = base.xyz;
     surface.alpha = base.w;
+    surface.occlusion = GetOcclusion(varying.baseUV);
     surface.metallic = GetMetallic(varying.baseUV);
-    surface.smoothness = GetSmoothness(varying.baseUV);
+    surface.smoothness = GetSmoothness(varying.baseUV, varying.detailUV);
     surface.fresnelStrength = GetFresnel(varying.baseUV);
     
 
