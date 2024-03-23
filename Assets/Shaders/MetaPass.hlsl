@@ -37,12 +37,14 @@ Varying MetaPassVertex(Attribute attribute)
 
 float4 MetaPassFragment(Varying varying) : SV_TARGET
 {
-    float4 base = GetBase(varying.baseUV);
+    InputConfig config = GetInputConfig(varying.baseUV);
+
+    float4 base = GetBase(config);
 
     Surface surface = (Surface)0;
     surface.color = base.rgb;
-    surface.metallic = GetMetallic(varying.baseUV);
-    surface.smoothness = GetSmoothness(varying.baseUV);
+    surface.metallic = GetMetallic(config);
+    surface.smoothness = GetSmoothness(config);
     BRDF brdf = GetBRDF(surface);
     
     float4 meta = 0.0;

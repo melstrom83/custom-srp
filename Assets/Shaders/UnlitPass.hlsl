@@ -12,6 +12,9 @@ struct Varying
 {
     float4 positionCS : SV_POSITION;
     float2 baseUV : TEXCOORD0;
+#if defined (_DETAIL_MAP)
+    float2 detailUV : TEXCOORD1;
+#endif
     UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
@@ -25,18 +28,29 @@ Varying UnlitPassVertex(Attribute attribute)
     varying.positionCS = TransformWorldToHClip(positionWS);
 
     varying.baseUV = TransformBaseUV(attribute.baseUV);
-    
+#if defined (_DETAIL_MAP)    
+    varying.detailUV = TransformDetailUV(attribute.baseUV);
+#endif
     return varying;
 }
 
 float4 UnlitPassFragment(Varying varying) : SV_TARGET
 {
     UNITY_SETUP_INSTANCE_ID(varying);
-
-    float4 base = GetBase(varying.baseUV);
+  
+    InputConfig config = GetInputConfig(varying.baseUV);
+#if defined(_DETAIL_MAP)
+    config.detailUV = varying.detailUV;
+    config.useDetail = true;
+#endif
+#if defined(_MASK_MAP)
+    config.useMask = true;
+#endif
+  
+    float4 base = GetBase(config);
 
     #if defined(_CLIPPING)
-        clip(base.a - GetClipping(varying.baseUV);
+        clip(base.a - GetClipping(config));
     #endif
     
     return base;

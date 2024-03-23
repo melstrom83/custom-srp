@@ -40,11 +40,13 @@ Varying ShadowCasterPassVertex(Attribute attribute)
 void ShadowCasterPassFragment(Varying varying)
 {
     UNITY_SETUP_INSTANCE_ID(varying);
+  
+    InputConfig config = GetInputConfig(varying.baseUV);
 
-    float4 base = GetBase(varying.baseUV);
+    float4 base = GetBase(config);
 
-    #if defined(_CLIPPING)
-        clip(base.a - GetClipping(varying.baseUV);
+#if defined(_CLIPPING)
+    clip(base.a - GetClipping(config));
 #endif
 }
 

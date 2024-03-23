@@ -27,7 +27,9 @@ struct Varying
     float4 tangentWS : TANGENT_WS;
 #endif
     float2 baseUV : TEXCOORD0;
+#if defined (_DETAIL_MAP)
     float2 detailUV : TEXCOORD1;
+#endif
     GI_VARYING_DATA
     UNITY_VERTEX_INPUT_INSTANCE_ID
 };
@@ -45,12 +47,13 @@ Varying LitPassVertex(Attribute attribute)
 
     varying.normalWS = TransformObjectToWorldNormal(attribute.normalOS);
 #if defined (_NORMAL_MAP) 
-    varying.tangentWS.xyz = TransformObjectToWorldDir(attribute.tangentOS);
+    varying.tangentWS.xyz = TransformObjectToWorldDir(attribute.tangentOS.xyz);
     varying.tangentWS.w = attribute.tangentOS.w;
 #endif 
     varying.baseUV = TransformBaseUV(attribute.baseUV);
+#if defined (_DETAIL_MAP)    
     varying.detailUV = TransformDetailUV(attribute.baseUV);
-    
+#endif    
     
     return varying;
 }
@@ -58,14 +61,23 @@ Varying LitPassVertex(Attribute attribute)
 float4 LitPassFragment(Varying varying) : SV_TARGET
 {
     UNITY_SETUP_INSTANCE_ID(varying);
-
-    float4 base = GetBase(varying.baseUV, varying.detailUV);
+  
+    InputConfig config = GetInputConfig(varying.baseUV);
+#if defined(_DETAIL_MAP)
+    config.detailUV = varying.detailUV;
+    config.useDetail = true;
+#endif
+#if defined(_MASK_MAP)
+    config.useMask = true;
+#endif
+  
+    float4 base = GetBase(config);
 
     Surface surface;
     surface.position = varying.positionWS;
 #if defined (_NORMAL_MAP)
     surface.normal = NormalTangentToWorld(
-      GetNormalTS(varying.baseUV, varying.detailUV), varying.normalWS, varying.tangentWS);
+      GetNormalTS(config), varying.normalWS, varying.tangentWS);
     surface.interpolatedNormal = varying.normalWS;
 #else
     surface.normal = normalize(varying.normalWS);
@@ -75,20 +87,20 @@ float4 LitPassFragment(Varying varying) : SV_TARGET
     surface.depth = -TransformWorldToView(varying.positionWS).z;
     surface.color = base.xyz;
     surface.alpha = base.w;
-    surface.occlusion = GetOcclusion(varying.baseUV);
-    surface.metallic = GetMetallic(varying.baseUV);
-    surface.smoothness = GetSmoothness(varying.baseUV, varying.detailUV);
-    surface.fresnelStrength = GetFresnel(varying.baseUV);
+    surface.occlusion = GetOcclusion(config);
+    surface.metallic = GetMetallic(config);
+    surface.smoothness = GetSmoothness(config);
+    surface.fresnelStrength = GetFresnel(config);
     
 
-    #if defined(_CLIPPING)
-        clip(base.a - GetClipping(varying.baseUV);
-    #endif
+#if defined(_CLIPPING)
+    clip(base.a - GetClipping(config));
+#endif
 
     BRDF brdf = GetBRDF(surface);
     GI gi = GetGI(GI_FRAGMENT_DATA(varying), surface, brdf);
     float3 color = GetLighting(surface, brdf, gi);
-    color += GetEmission(varying.baseUV);
+    color += GetEmission(config);
     return float4(color, surface.alpha);
 }
 
