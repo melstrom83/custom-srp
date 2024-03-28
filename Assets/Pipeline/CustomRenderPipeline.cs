@@ -5,7 +5,7 @@ using UnityEngine.Rendering;
 
 namespace Graphics
 {
-    public class CustomRenderPipeline : RenderPipeline
+    public partial class CustomRenderPipeline : RenderPipeline
     {
         private CameraRenderer _renderer = new CameraRenderer();
 
@@ -22,6 +22,8 @@ namespace Graphics
             GraphicsSettings.lightsUseLinearIntensity = true;
 
             _shadowSettings = shadowSettings;
+
+            InitializeForEditor();
         }
 
         protected override void Render(ScriptableRenderContext context, Camera[] cameras)
