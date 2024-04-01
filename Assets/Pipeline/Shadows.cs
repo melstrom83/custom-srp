@@ -304,7 +304,7 @@ namespace Graphics
             _buffer.ClearRenderTarget(true, false, Color.clear, 1.0f);
             _buffer.SetGlobalFloat(shadowPancakingId, 1.0f);
 
-            _buffer.BeginSample("Directional Shadows");
+            //_buffer.BeginSample("Directional Shadows");
             ExecuteBuffer();
 
             var tiles = _shadowSettings.directional.cascadeCount * shadowedDirectionalLightCount;
@@ -325,7 +325,7 @@ namespace Graphics
             SetKeywords(directionalFilterKeywords, 
                 (int)_shadowSettings.directional.filter - 1);
             
-            _buffer.EndSample("Directional Shadows");
+            //_buffer.EndSample("Directional Shadows");
             ExecuteBuffer();
         }
 
@@ -397,7 +397,7 @@ namespace Graphics
             _buffer.ClearRenderTarget(true, false, Color.clear, 1.0f);
             _buffer.SetGlobalFloat(shadowPancakingId, 0.0f);
 
-            _buffer.BeginSample("Additional Shadows");
+            //_buffer.BeginSample("Additional Shadows");
             ExecuteBuffer();
 
             var tiles = shadowedAdditionalLightCount;
@@ -425,7 +425,7 @@ namespace Graphics
             SetKeywords(additionalFilterKeywords,
                 (int)_shadowSettings.additional.filter - 1);
 
-            _buffer.EndSample("Additional Shadows");
+            //_buffer.EndSample("Additional Shadows");
             ExecuteBuffer();
         }
 
