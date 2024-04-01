@@ -15,6 +15,8 @@ struct Varying
     UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
+bool _ShadowPancaking;
+
 Varying ShadowCasterPassVertex(Attribute attribute)
 {
     Varying varying;
@@ -24,13 +26,16 @@ Varying ShadowCasterPassVertex(Attribute attribute)
     float3 positionWS = TransformObjectToWorld(attribute.positionOS.xyz);
     varying.positionCS = TransformWorldToHClip(positionWS);
 
-    #if UNITY_REVERSED_Z
-    varying.positionCS.z =
+    if(_ShadowPancaking)
+    {
+#if UNITY_REVERSED_Z
+        varying.positionCS.z =
         min(varying.positionCS.z, varying.positionCS.w * UNITY_NEAR_CLIP_VALUE);
-    #else
-    varying.positionCS.z =
+#else
+        varying.positionCS.z =
         max(varying.positionCS.z, varying.positionCS.w * UNITY_NEAR_CLIP_VALUE);
-    #endif
+#endif
+    }
     
     varying.baseUV = TransformBaseUV(attribute.baseUV);
     

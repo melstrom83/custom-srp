@@ -14,6 +14,7 @@ CBUFFER_START(_CustomLight)
     float4 _AdditionalLightPositions[ADDITIONAL_LIGHT_LIMIT];
     float4 _AdditionalLightDirections[ADDITIONAL_LIGHT_LIMIT];
     float4 _AdditionalLightSpotAngles[ADDITIONAL_LIGHT_LIMIT];
+    float4 _AdditionalLightShadowData[ADDITIONAL_LIGHT_LIMIT];
 CBUFFER_END
 
 struct Light
@@ -43,6 +44,20 @@ DirectionalShadowData GetDirectionalShadowData(int lightIndex, ShadowData shadow
     return data;
 }
 
+AdditionalShadowData GetAdditionalShadowData(int lightIndex)
+{
+    AdditionalShadowData data;
+    data.strength = _AdditionalLightShadowData[lightIndex].x;
+    data.tileIndex = _AdditionalLightShadowData[lightIndex].y;
+    data.isPoint = _AdditionalLightShadowData[lightIndex].z == 1.0;
+    data.maskChannel = _AdditionalLightShadowData[lightIndex].w;
+    data.lightDirectionWS = 0;
+    data.lightPositionWS = 0;
+    data.spotDirectionWS = 0;
+    
+    return data;
+}
+
 Light GetDirectionalLight(int index, Surface surface, ShadowData shadowData)
 {
     Light light;
@@ -58,15 +73,22 @@ Light GetAdditionalLight(int index, Surface surface, ShadowData shadowData)
 {
     Light light;
     light.color = _AdditionalLightColors[index].xyz;
-    float3 ray = _AdditionalLightPositions[index].xyz - surface.position;
+    float3 position = _AdditionalLightPositions[index].xyz;
+    float3 ray = position - surface.position;
     light.direction = normalize(ray);
     float distanceSqr = max(dot(ray, ray), 0.00001);
     float rangeAttenuation = Square(saturate(1.0 - Square(distanceSqr * _AdditionalLightPositions[index].w)));
     float4 spotAngles = _AdditionalLightSpotAngles[index];
+    float3 spotDirection = _AdditionalLightDirections[index].xyz;
     float spotAttenuation = Square(saturate(
-        dot(_AdditionalLightDirections[index].xyz, light.direction) *
+        dot(spotDirection, light.direction) *
         spotAngles.x + spotAngles.y));
-    light.attenuation = spotAttenuation * rangeAttenuation / distanceSqr;
+    AdditionalShadowData additionalShadowData = GetAdditionalShadowData(index);
+    additionalShadowData.lightPositionWS = position;
+    additionalShadowData.lightDirectionWS = light.direction;
+    additionalShadowData.spotDirectionWS = spotDirection;
+    light.attenuation = GetAdditionalShadowAttenuation(additionalShadowData, shadowData, surface) *
+        spotAttenuation * rangeAttenuation / distanceSqr;
     return light;
 }
 

@@ -38,6 +38,13 @@ namespace Graphics
                 new Vector3(cascadeRatio1, cascadeRatio2, cascadeRatio3);
         }
 
+        [Serializable]
+        public struct Additional
+        {
+            public TextureSize atlasSize;
+            public FilterMode filter;
+        }
+
         public Directional directional = new Directional()
         {
             atlasSize = TextureSize._1024,
@@ -50,6 +57,10 @@ namespace Graphics
             
         };
 
-
+        public Additional additional = new Additional()
+        {
+            atlasSize = TextureSize._1024,
+            filter = FilterMode.Default
+        };
     }
 }
