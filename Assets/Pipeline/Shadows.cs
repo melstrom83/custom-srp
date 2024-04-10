@@ -12,21 +12,21 @@ namespace Graphics
 
         private ShadowSettings _shadowSettings;
 
-        private static int directionalShadowAtlasId = Shader.PropertyToID("_DirectionalShadowAtlas");
-        private static int directionalShadowMatricesId = Shader.PropertyToID("_DirectionalShadowMatrices");
-        private static int additionalShadowAtlasId = Shader.PropertyToID("_AdditionalShadowAtlas");
-        private static int additionalShadowMatricesId = Shader.PropertyToID("_AdditionalShadowMatrices");
-        private static int additionalShadowTilesId = Shader.PropertyToID("_AdditionalShadowTiles");
-        private static int cascadeCountId = Shader.PropertyToID("_CascadeCount");
-        private static int cascadeCullingSpheresId = Shader.PropertyToID("_CascadeCullingSpheres");
-        private static int cascadeDataId = Shader.PropertyToID("_CascadeData");
-        private static int shadowAtlasSizeId = Shader.PropertyToID("_ShadowAtlasSize");
-        private static int shadowDistanceFadeId = Shader.PropertyToID("_ShadowDistanceFade");
-        private static int shadowPancakingId = Shader.PropertyToID("_ShadowPancaking");
+        private static readonly int directionalShadowAtlasId = Shader.PropertyToID("_DirectionalShadowAtlas");
+        private static readonly int directionalShadowMatricesId = Shader.PropertyToID("_DirectionalShadowMatrices");
+        private static readonly int additionalShadowAtlasId = Shader.PropertyToID("_AdditionalShadowAtlas");
+        private static readonly int additionalShadowMatricesId = Shader.PropertyToID("_AdditionalShadowMatrices");
+        private static readonly int additionalShadowTilesId = Shader.PropertyToID("_AdditionalShadowTiles");
+        private static readonly int cascadeCountId = Shader.PropertyToID("_CascadeCount");
+        private static readonly int cascadeCullingSpheresId = Shader.PropertyToID("_CascadeCullingSpheres");
+        private static readonly int cascadeDataId = Shader.PropertyToID("_CascadeData");
+        private static readonly int shadowAtlasSizeId = Shader.PropertyToID("_ShadowAtlasSize");
+        private static readonly int shadowDistanceFadeId = Shader.PropertyToID("_ShadowDistanceFade");
+        private static readonly int shadowPancakingId = Shader.PropertyToID("_ShadowPancaking");
 
         private const int cascadeLimit = 4;
-        private Vector4[] cascadeCullingSpheres = new Vector4[cascadeLimit];
-        private Vector4[] cascadeData = new Vector4[cascadeLimit];
+        private readonly Vector4[] cascadeCullingSpheres = new Vector4[cascadeLimit];
+        private readonly Vector4[] cascadeData = new Vector4[cascadeLimit];
         
         private Vector4 atlasSizes;
 
@@ -35,22 +35,21 @@ namespace Graphics
         private const int shadowedAdditionalLightLimit = 16;
         private int shadowedAdditionalLightCount;
 
-        private Matrix4x4[] directionalShadowMatrices =
+        private readonly Matrix4x4[] directionalShadowMatrices =
             new Matrix4x4[shadowedDirectionalLightLimit * cascadeLimit];
-        private Matrix4x4[] additionalShadowMatrices =
+        private readonly Matrix4x4[] additionalShadowMatrices =
             new Matrix4x4[shadowedAdditionalLightLimit];
 
-        private Vector4[] additionalShadowTiles = new Vector4[shadowedAdditionalLightLimit];
+        private readonly Vector4[] additionalShadowTiles = new Vector4[shadowedAdditionalLightLimit];
 
-
-        struct ShadowedDirectionalLight
+        private struct ShadowedDirectionalLight
         {
             public int visibleLightIndex;
             public float slopeScaleBias;
             public float nearPlaneOffset;
         }
 
-        struct ShadowedAdditionalLight
+        private struct ShadowedAdditionalLight
         {
             public int visibleLightIndex;
             public float slopeScaleBias;
@@ -58,37 +57,37 @@ namespace Graphics
             public bool isPoint;
         }
 
-        private ShadowedDirectionalLight[] ShadowedDirectionalLights =
+        private readonly ShadowedDirectionalLight[] ShadowedDirectionalLights =
             new ShadowedDirectionalLight[shadowedDirectionalLightLimit];
 
-        private ShadowedAdditionalLight[] ShadowedAdditionalLights =
+        private readonly ShadowedAdditionalLight[] ShadowedAdditionalLights =
             new ShadowedAdditionalLight[shadowedAdditionalLightLimit];
 
-        static string[] directionalFilterKeywords =
+        private static readonly string[] directionalFilterKeywords =
         {
             "_DIRECTIONAL_PCF3",
             "_DIRECTIONAL_PCF5",
             "_DIRECTIONAL_PCF7",
         };
 
-        static string[] additionalFilterKeywords =
+        private static readonly string[] additionalFilterKeywords =
         {
             "_ADDITIONAL_PCF3",
             "_ADDITIONAL_PCF5",
             "_ADDITIONAL_PCF7",
         };
 
-        static string[] shadowMasKeywords =
+        private static readonly string[] shadowMasKeywords =
         {
             "_SHADOW_MASK_ALWAYS",
             "_SHADOW_MASK_DISTANCE"
         };
 
-        bool useShadowMask;
+        private bool useShadowMask;
 
         private ScriptableRenderContext _context;
 
-        private CommandBuffer _buffer = new CommandBuffer
+        private readonly CommandBuffer _buffer = new CommandBuffer
         {
             name = _bufferName
         };
@@ -181,7 +180,7 @@ namespace Graphics
             _cullingResults = cullingResults;
         }
 
-        void SetKeywords(string[] keywords, int enabledIndex) 
+        private void SetKeywords(string[] keywords, int enabledIndex) 
         {
             for (var i = 0; i < keywords.Length; ++i)
             {
@@ -225,7 +224,7 @@ namespace Graphics
             ExecuteBuffer();
         }
 
-        Matrix4x4 ConvertToAtlasMatrix(Matrix4x4 m, Vector2 offset, float scale)
+        private Matrix4x4 ConvertToAtlasMatrix(Matrix4x4 m, Vector2 offset, float scale)
         {
             if (SystemInfo.usesReversedZBuffer)
             {
@@ -252,14 +251,14 @@ namespace Graphics
             return m;
         }
 
-        Vector2 SetTileViewport(int index, int split, int tileSize)
+        private Vector2 SetTileViewport(int index, int split, int tileSize)
         {
             var offset = new Vector2(index % split, index / split);
             _buffer.SetViewport(new Rect(offset.x * tileSize, offset.y * tileSize, tileSize, tileSize));
             return offset;
         }
 
-        void SetCascadeData(int index, Vector4 cullingSphere, float tileSize)
+        private void SetCascadeData(int index, Vector4 cullingSphere, float tileSize)
         {
             var texelSize = 2.0f * cullingSphere.w / tileSize;
             var filterSize = texelSize * ((float)_shadowSettings.directional.filter + 1.0f);
@@ -273,7 +272,7 @@ namespace Graphics
                 filterSize * Mathf.Sqrt(2.0f));
         }
 
-        void RenderDirectionalShadows()
+        private void RenderDirectionalShadows()
         {
             var atlasSize = (int)_shadowSettings.directional.atlasSize;
             atlasSizes.x = atlasSize;
@@ -329,7 +328,7 @@ namespace Graphics
             ExecuteBuffer();
         }
 
-        void RenderDirectionalShadows(int index, int split, int tileSize)
+        private void RenderDirectionalShadows(int index, int split, int tileSize)
         {
             var light = ShadowedDirectionalLights[index];
             var shadowSettings = new ShadowDrawingSettings(_cullingResults,
@@ -365,8 +364,7 @@ namespace Graphics
             }
         }
 
-
-        void RenderAdditionalShadows()
+        private void RenderAdditionalShadows()
         {
             var atlasSize = (int)_shadowSettings.additional.atlasSize;
             atlasSizes.z = atlasSize;
@@ -429,8 +427,7 @@ namespace Graphics
             ExecuteBuffer();
         }
 
-
-        void RenderSpotShadows(int index, int split, int tileSize)
+        private void RenderSpotShadows(int index, int split, int tileSize)
         {
             var light = ShadowedAdditionalLights[index];
             var shadowSettings = new ShadowDrawingSettings(_cullingResults,
@@ -453,7 +450,7 @@ namespace Graphics
             _buffer.SetGlobalDepthBias(0.0f, 0.0f);
         }
 
-        void RenderPointShadows(int index, int split, int tileSize)
+        private void RenderPointShadows(int index, int split, int tileSize)
         {
             var light = ShadowedAdditionalLights[index];
             var shadowSettings = new ShadowDrawingSettings(_cullingResults,
@@ -486,7 +483,7 @@ namespace Graphics
             }
         }
 
-        void SetAdditionalTileData(int index, Vector2 offset, float scale, float bias)
+        private void SetAdditionalTileData(int index, Vector2 offset, float scale, float bias)
         {
             var border = atlasSizes.w * 0.5f;
             var data = Vector4.zero;
@@ -504,7 +501,7 @@ namespace Graphics
             ExecuteBuffer();
         }
 
-        void ExecuteBuffer()
+        private void ExecuteBuffer()
         {
             _context.ExecuteCommandBuffer(_buffer);
             _buffer.Clear();

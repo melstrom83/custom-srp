@@ -183,7 +183,7 @@ float GetCascadedShadow(DirectionalShadowData directional,
           (directional.normalBias * _CascadeData[global.cascadeIndex].y);
     float4 positionSTS = mul(
           _DirectionalShadowMatrices[directional.tileIndex],
-          float4(surfaceWS.position + normalBias, 1.0));
+          float4(surfaceWS.position /*+ normalBias*/, 1.0));
     float shadow = FilterDirectionalShadow(positionSTS.xyz);
   
     return shadow;
@@ -268,7 +268,7 @@ float GetAdditionalShadow(AdditionalShadowData additional,
     float3 normalBias = surfaceWS.interpolatedNormal * (distanceToLightPlane * tileData.w);
     float4 positionSTS = mul(
         _AdditionalShadowMatrices[tileIndex],
-        float4(surfaceWS.position + normalBias, 1.0));
+        float4(surfaceWS.position /*+ normalBias*/, 1.0));
     return FilterAdditionalShadow(positionSTS.xyz / positionSTS.w, tileData.xyz);
 }
 
