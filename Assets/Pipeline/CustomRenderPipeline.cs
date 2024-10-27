@@ -12,9 +12,10 @@ namespace Graphics
         private bool _useDynamicBatching;
         private bool _useGPUInstancing;
         private ShadowSettings _shadowSettings;
+        private PostFXSettings _postFXSettings;
 
         public CustomRenderPipeline(bool useDynamicBatching, bool useGPUInstancing, bool useSRPBatching,
-            ShadowSettings shadowSettings)
+            ShadowSettings shadowSettings, PostFXSettings postFXSettings)
         {
             _useDynamicBatching = useDynamicBatching;
             _useGPUInstancing = useGPUInstancing;
@@ -22,6 +23,7 @@ namespace Graphics
             GraphicsSettings.lightsUseLinearIntensity = true;
 
             _shadowSettings = shadowSettings;
+            _postFXSettings = postFXSettings;
 
             InitializeForEditor();
         }
@@ -30,7 +32,8 @@ namespace Graphics
         {
             foreach (var camera in cameras)
             {
-                _renderer.Render(context, camera, _useDynamicBatching, _useGPUInstancing, _shadowSettings);
+                _renderer.Render(context, camera, _useDynamicBatching, _useGPUInstancing,
+                    _shadowSettings, _postFXSettings);
             }
         }
     }

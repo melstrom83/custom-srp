@@ -7,7 +7,7 @@ namespace Graphics
 {
     public class Shadows
     {
-        private const string _bufferName = "Shadows";
+        private const string _bufferName = "Shadow";
         private CullingResults _cullingResults;
 
         private ShadowSettings _shadowSettings;

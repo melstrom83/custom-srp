@@ -44,11 +44,19 @@ namespace Graphics
             _context.DrawRenderers(_cullingResults, ref drawingSettings, ref filteringSettings);
         }
 
-        partial void DrawGizmos()
+
+        partial void DrawGizmosBeforeFX()
         {
             if (Handles.ShouldRenderGizmos())
             {
                 _context.DrawGizmos(_camera, GizmoSubset.PreImageEffects);
+            }
+        }
+
+        partial void DrawGizmosAfterFX()
+        {
+            if (Handles.ShouldRenderGizmos())
+            {
                 _context.DrawGizmos(_camera, GizmoSubset.PostImageEffects);
             }
         }

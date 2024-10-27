@@ -14,11 +14,14 @@ namespace Graphics
 
         [SerializeField] 
         ShadowSettings ShadowSettings = default;
+
+        [SerializeField]
+        PostFXSettings PostFXSettings = default;
         
         protected override RenderPipeline CreatePipeline()
         {
             return new CustomRenderPipeline(UseDynamicBatching, UseGPUInstancing, UseSRPBatcher,
-                ShadowSettings);
+                ShadowSettings, PostFXSettings);
         }
     }
 }
