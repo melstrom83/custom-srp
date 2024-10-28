@@ -107,7 +107,7 @@ float4 BloomVerticalPassFragment(Varying varying) : SV_TARGET
     float3 color = 0.0;
     for (int i = 0; i < 5; ++i)
     {
-        float offset = offsets[i] * 2.0 * GetSourceTexelSize().y;
+        float offset = offsets[i] * GetSourceTexelSize().y;
         color += GetSource(varying.screenUV + float2(0.0, offset)).rgb * weights[i];
     }
     return float4(color, 1.0);
@@ -119,7 +119,7 @@ float4 BloomCombinePassFragment(Varying varying) : SV_TARGET
         ? GetSourceBicubic(varying.screenUV).rgb
         : GetSource(varying.screenUV).rgb;
     float3 highRes = GetSource2(varying.screenUV).rgb;
-    return float4(lowRes + highRes, 1.0);
+    return float4(lowRes * _BloomIntensity + highRes, 1.0);
 }
 
 float3 ApplyBloomThreshold(float3 color)
