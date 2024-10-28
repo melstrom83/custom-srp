@@ -12,3 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b88d99931d5dc044d81ec1de67c9da88, type: 3}
   m_Name: PostFX
   m_EditorClassIdentifier: 
+  bloom:
+    maxIterations: 2
+    downscaleLimit: 2
+    bicubicUpsampling: 1
+  shader: {fileID: 4800000, guid: 29208b21d057a1f45bec832362940900, type: 3}
