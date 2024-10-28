@@ -15,5 +15,8 @@ MonoBehaviour:
   bloom:
     maxIterations: 2
     downscaleLimit: 2
-    bicubicUpsampling: 1
+    bicubicUpsampling: 0
+    threshold: 0.75
+    thresholdKnee: 0.5
+    intensity: 1
   shader: {fileID: 4800000, guid: 29208b21d057a1f45bec832362940900, type: 3}
