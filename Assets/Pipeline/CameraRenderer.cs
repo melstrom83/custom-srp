@@ -18,6 +18,8 @@ namespace Graphics
 
         private Camera _camera;
 
+        bool useHDR;
+
         private static ShaderTagId unlitShaderTagId = new ShaderTagId("SRPDefaultUnlit");
         private static ShaderTagId litShaderTagId = new ShaderTagId("CustomLit");
 
@@ -33,11 +35,13 @@ namespace Graphics
         PostFXStack postFXStack = new PostFXStack();
         
         public void Render(ScriptableRenderContext context, Camera camera,
-            bool useDynamicBatching, bool useGPUInstancing,
+           bool allowHDR, bool useDynamicBatching, bool useGPUInstancing,
             ShadowSettings shadowSettings, PostFXSettings postFXSettings)
         {
             _camera = camera;
             _context = context;
+
+            useHDR = allowHDR && _camera.allowHDR;
 
             PrepareBuffer();
             PrepareForSceneWindow();
@@ -50,7 +54,7 @@ namespace Graphics
             _buffer.BeginSample(SampleName);
             ExecuteBuffer();
             lighting.Setup(context, _cullingResults, shadowSettings);
-            postFXStack.Setup(context, camera, postFXSettings);
+            postFXStack.Setup(context, camera, postFXSettings, useHDR);
             _buffer.EndSample(SampleName);
             Setup();
             DrawVisibleGeometry(useDynamicBatching, useGPUInstancing);
@@ -119,7 +123,7 @@ namespace Graphics
                 }
 
                 _buffer.GetTemporaryRT(frameBufferId, _camera.pixelWidth, _camera.pixelHeight,
-                    32, FilterMode.Bilinear, RenderTextureFormat.Default);
+                    32, FilterMode.Bilinear, useHDR ? RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default);
 
                 _buffer.SetRenderTarget(frameBufferId, 
                     RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store);

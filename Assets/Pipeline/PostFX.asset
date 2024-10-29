@@ -13,10 +13,13 @@ MonoBehaviour:
   m_Name: PostFX
   m_EditorClassIdentifier: 
   bloom:
-    maxIterations: 2
-    downscaleLimit: 2
+    maxIterations: 16
+    downscaleLimit: 1
     bicubicUpsampling: 0
     threshold: 0.5
     thresholdKnee: 0.75
     intensity: 0.5
+    fadeFireflies: 1
+    mode: 1
+    scatter: 0.25
   shader: {fileID: 4800000, guid: 29208b21d057a1f45bec832362940900, type: 3}

@@ -17,10 +17,13 @@ namespace Graphics
 
         [SerializeField]
         PostFXSettings PostFXSettings = default;
+
+        [SerializeField]
+        bool allowHDR = true;
         
         protected override RenderPipeline CreatePipeline()
         {
-            return new CustomRenderPipeline(UseDynamicBatching, UseGPUInstancing, UseSRPBatcher,
+            return new CustomRenderPipeline(allowHDR, UseDynamicBatching, UseGPUInstancing, UseSRPBatcher,
                 ShadowSettings, PostFXSettings);
         }
     }
