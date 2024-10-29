@@ -11,6 +11,7 @@ enum Pass
     BloomPrefilter,
     BloomPrefilterFireflies,
     BloomScatter,
+    ToneMappingNone,
     ToneMappingACES,
     ToneMappingNeutral,
     ToneMappingReinhard
@@ -208,7 +209,7 @@ public partial class PostFXStack
     void DoToneMapping(int sourceId)
     {
         var mode = settings.ToneMapping.mode;
-        var pass = mode < 0 ? Pass.Copy : Pass.ToneMappingACES + (int)mode;
+        var pass = Pass.ToneMappingNone + (int)mode;
         Draw(sourceId, BuiltinRenderTextureType.CameraTarget, pass);
     }
 }

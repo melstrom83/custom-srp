@@ -1,4 +1,5 @@
 using System;
+using UnityEditor.ShaderGraph.Internal;
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "Rendering/Custom Post FX Settings")]
@@ -40,13 +41,34 @@ public class PostFXSettings : ScriptableObject
     [Serializable]
     public struct ToneMappingSettings
     {
-        public enum Mode { None = -1, ACES, Neutral, Reinhard }
+        public enum Mode { None, ACES, Neutral, Reinhard }
         public Mode mode;
     }
 
     [SerializeField]
     ToneMappingSettings toneMapping = default;
     public ToneMappingSettings ToneMapping => toneMapping;
+
+    [Serializable]
+    public struct ColorAdjustmentSettings 
+    {
+        public float postExposure;
+        [Range(-100f, 100f)]
+        public float contrast;
+        [ColorUsage(false, true)]
+        public Color colorFilter;
+        [Range(-180f, 180f)]
+        public float hueShift;
+        [Range(-100f, 100f)]
+        public float saturation;
+    }
+
+    [SerializeField]
+    ColorAdjustmentSettings colorAdjustments = new ColorAdjustmentSettings
+    {
+        colorFilter = Color.white
+    };
+    public ColorAdjustmentSettings ColorAdjustments => colorAdjustments;
 
     [SerializeField]
     Shader shader = default;
