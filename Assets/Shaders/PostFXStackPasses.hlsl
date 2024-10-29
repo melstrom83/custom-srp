@@ -172,4 +172,28 @@ float4 BloomScatterPassFragment(Varying varying) : SV_TARGET
     return float4(lerp(highRes, lowRes, _BloomIntensity), 1.0);
 }
 
+float4 ToneMappingACESPassFragment(Varying varying) : SV_TARGET
+{
+    float3 color = GetSource(varying.screenUV);
+    color = min(color, 60.0);
+    color = AcesTonemap(unity_to_ACES(color));
+    return float4(color, 1.0);
+}
+
+float4 ToneMappingNeutralPassFragment(Varying varying) : SV_TARGET
+{
+    float3 color = GetSource(varying.screenUV);
+    color = min(color, 60.0);
+    color = NeutralTonemap(color);
+    return float4(color, 1.0);
+}
+
+float4 ToneMappingReinhardPassFragment(Varying varying) : SV_TARGET
+{
+    float3 color = GetSource(varying.screenUV);
+    color = min(color, 60.0);
+    color /= color + 1.0;
+    return float4(color, 1.0);
+}
+
 #endif

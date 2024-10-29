@@ -35,6 +35,18 @@ public class PostFXSettings : ScriptableObject
 
     [SerializeField]
     BloomSettings bloom = default;
+    public BloomSettings Bloom => bloom;
+
+    [Serializable]
+    public struct ToneMappingSettings
+    {
+        public enum Mode { None = -1, ACES, Neutral, Reinhard }
+        public Mode mode;
+    }
+
+    [SerializeField]
+    ToneMappingSettings toneMapping = default;
+    public ToneMappingSettings ToneMapping => toneMapping;
 
     [SerializeField]
     Shader shader = default;
@@ -53,6 +65,4 @@ public class PostFXSettings : ScriptableObject
             return material;
         }
     }
-
-    public BloomSettings Bloom => bloom;
 }
