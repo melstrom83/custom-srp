@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: PostFX
   m_EditorClassIdentifier: 
   bloom:
-    maxIterations: 0
+    maxIterations: 2
     downscaleLimit: 1
     bicubicUpsampling: 0
-    threshold: 0.5
-    thresholdKnee: 0.75
+    threshold: 0.75
+    thresholdKnee: 0.5
     intensity: 0.5
     fadeFireflies: 1
     mode: 1
@@ -27,7 +27,18 @@ MonoBehaviour:
   colorAdjustments:
     postExposure: 0
     contrast: 0
-    colorFilter: {r: 0, g: 0, b: 0, a: 0}
+    colorFilter: {r: 1, g: 1, b: 1, a: 0}
     hueShift: 0
     saturation: 0
+  whiteBalance:
+    temperature: 0
+    tint: 0
+  splitToning:
+    shadows: {r: 0.645283, g: 0.524749, b: 0.524749, a: 1}
+    highlights: {r: 0.15791024, g: 0.10042714, b: 0.3433962, a: 1}
+    balance: 8
+  channelMixer:
+    r: {x: 1, y: 0, z: 0.33333}
+    g: {x: 0, y: 0.5, z: 0.33333}
+    b: {x: 0, y: 0.5, z: 0.33333}
   shader: {fileID: 4800000, guid: 29208b21d057a1f45bec832362940900, type: 3}

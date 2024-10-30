@@ -1,6 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
+using static PostFXSettings;
 
 enum Pass
 {
@@ -37,6 +38,14 @@ public partial class PostFXStack
     int bloomThresholdId = Shader.PropertyToID("_BloomThreshold");
     int bloomIntensityId = Shader.PropertyToID("_BloomIntensity");
     int bloomResultId = Shader.PropertyToID("_BloomResult");
+    int colorAdjustmentsId = Shader.PropertyToID("_ColorAdjustments");
+    int colorFilterId = Shader.PropertyToID("_ColorFilter");
+    int whiteBalanceId = Shader.PropertyToID("_WhiteBalance");
+    int splitToningShadowsId = Shader.PropertyToID("_SplitToningShadows");
+    int splitToningHightlightsId = Shader.PropertyToID("_SplitToningHighlights");
+    int channelMixerRId = Shader.PropertyToID("_ChannelMixerR");
+    int channelMixerGId = Shader.PropertyToID("_ChannelMixerG");
+    int channelMixerBId = Shader.PropertyToID("_ChannelMixerB");
 
     ScriptableRenderContext context;
     Camera camera;
@@ -64,6 +73,41 @@ public partial class PostFXStack
     }
 #endif
 
+    void ConfigureColorAdjustments()
+    {
+        var colorAdjustments = settings.ColorAdjustments;
+        buffer.SetGlobalVector(colorAdjustmentsId, new Vector4(
+            Mathf.Pow(2.0f, colorAdjustments.postExposure),
+            colorAdjustments.contrast * 0.01f + 1.0f,
+            colorAdjustments.hueShift * (1.0f / 360.0f),
+            colorAdjustments.saturation * 0.01f + 1.0f));
+        buffer.SetGlobalColor(colorFilterId, colorAdjustments.colorFilter.linear);
+    }
+
+    void ConfigureWhiteBalance()
+    {
+        var whiteBalance = settings.WhiteBalance;
+        buffer.SetGlobalVector(whiteBalanceId, ColorUtils.ColorBalanceToLMSCoeffs(
+            whiteBalance.temperature, whiteBalance.tint));
+    }
+
+    void ConfigureSplitToning()
+    {
+        var splitToning = settings.SplitToning;
+        var splitColor = splitToning.shadows;
+        splitColor.a = splitToning.balance * 0.01f;
+        buffer.SetGlobalVector(splitToningShadowsId, splitColor);
+        buffer.SetGlobalVector(splitToningHightlightsId, splitToning.highlights);
+    }
+
+    void ConfigureChannelMixer()
+    {
+        var channelMixer = settings.ChannelMixer;
+        buffer.SetGlobalVector(channelMixerRId, channelMixer.r);
+        buffer.SetGlobalVector(channelMixerGId, channelMixer.g);
+        buffer.SetGlobalVector(channelMixerBId, channelMixer.b);
+    }
+
     public void Setup(ScriptableRenderContext context, Camera camera, PostFXSettings settings,
         bool useHDR)
     {
@@ -87,16 +131,14 @@ public partial class PostFXStack
 
     public void Render(int sourceId)
     {
-        //Draw(sourceId, BuiltinRenderTextureType.CameraTarget, Pass.Copy);
-
         if(DoBloom(sourceId))
         {
-            DoToneMapping(bloomResultId);
+            DoColorGradingAndToneMapping(bloomResultId);
             buffer.ReleaseTemporaryRT(bloomResultId);
         }
         else
         {
-            DoToneMapping(sourceId);
+            DoColorGradingAndToneMapping(sourceId);
         }
         context.ExecuteCommandBuffer(buffer);
         buffer.Clear();
@@ -206,8 +248,13 @@ public partial class PostFXStack
         return true;
     }
 
-    void DoToneMapping(int sourceId)
+    void DoColorGradingAndToneMapping(int sourceId)
     {
+        ConfigureColorAdjustments();
+        ConfigureWhiteBalance();
+        ConfigureSplitToning();
+        ConfigureChannelMixer();
+
         var mode = settings.ToneMapping.mode;
         var pass = Pass.ToneMappingNone + (int)mode;
         Draw(sourceId, BuiltinRenderTextureType.CameraTarget, pass);

@@ -15,6 +15,17 @@ float4 _BloomThreshold;
 bool _BloomBicubicUpsampling;
 float _BloomIntensity;
 
+float4 _ColorAdjustments;
+float4 _ColorFilter;
+float4 _WhiteBalance;
+
+float4 _SplitToningShadows;
+float4 _SplitToningHighlights;
+
+float4 _ChannelMixerR;
+float4 _ChannelMixerG;
+float4 _ChannelMixerB;
+
 
 struct Varying
 {
@@ -172,22 +183,87 @@ float4 BloomScatterPassFragment(Varying varying) : SV_TARGET
     return float4(lerp(highRes, lowRes, _BloomIntensity), 1.0);
 }
 
+float3 ColorGradePostExposure(float3 color)
+{
+    return color * _ColorAdjustments.x;
+}
+
+float3 ColorGradeWhiteBalance(float3 color)
+{
+    color = LinearToLMS(color);
+    color *= _WhiteBalance.rgb;
+    return LMSToLinear(color);
+}
+
+float3 ColorGradingContrast(float3 color)
+{
+    color = LinearToLogC(color);
+    color = (color - ACEScc_MIDGRAY) * _ColorAdjustments.y + ACEScc_MIDGRAY;
+    return LogCToLinear(color);
+}
+
+float3 ColorGradeColorFilter(float3 color)
+{
+    return color * _ColorFilter.rgb;
+}
+
+float3 ColorGradingHueShift(float3 color)
+{
+    color = RgbToHsv(color);
+    float hue = color.x + _ColorAdjustments.z;
+    color.x = RotateHue(hue, 0.0, 1.0);
+    return HsvToRgb(color);
+}
+
+float3 ColorGradingSaturation(float3 color)
+{
+    float luminance = Luminance(color);
+    return (color - luminance) * _ColorAdjustments.w + luminance;
+}
+
+float3 ColorGradeSplitToning(float3 color)
+{
+    color = PositivePow(color, 1.0 / 2.2);
+    float t = saturate(Luminance(saturate(color)) + _SplitToningShadows.w);
+    float3 shadows = lerp(0.5, _SplitToningShadows.rgb, 1.0 - t);
+    float3 highlights = lerp(0.5, _SplitToningHighlights.rgb, t);
+    color = SoftLight(color, shadows);
+    color = SoftLight(color, highlights);
+    return PositivePow(color, 2.2);
+}
+
+float3 ColorGradingChannelMixer(float3 color)
+{
+    float3x3 mixer = float3x3(_ChannelMixerR.rgb, _ChannelMixerG.rgb, _ChannelMixerB.rgb);
+    return mul(mixer, color);
+}
+
 float3 ColorGrade(float3 color)
 {
     color = min(color, 60.0);
-    return color;
+    color = ColorGradePostExposure(color);
+    color = ColorGradeWhiteBalance(color);
+    color = ColorGradingContrast(color);
+    color = ColorGradeColorFilter(color);
+    color = max(color, 0.0);
+    color = ColorGradeSplitToning(color);
+    color = ColorGradingChannelMixer(color);
+    color = max(color, 0.0);
+    color = ColorGradingHueShift(color);
+    color = ColorGradingSaturation(color);
+    return max(color, 0.0);
 }
 
 float4 ToneMappingNonePassFragment(Varying varying) : SV_TARGET
 {
-    float3 color = GetSource(varying.screenUV);
+    float3 color = GetSource(varying.screenUV).rgb;
     color = ColorGrade(color);
     return float4(color, 1.0);
 }
 
 float4 ToneMappingACESPassFragment(Varying varying) : SV_TARGET
 {
-    float3 color = GetSource(varying.screenUV);
+    float3 color = GetSource(varying.screenUV).rgb;
     color = ColorGrade(color);
     color = AcesTonemap(unity_to_ACES(color));
     return float4(color, 1.0);
@@ -195,7 +271,7 @@ float4 ToneMappingACESPassFragment(Varying varying) : SV_TARGET
 
 float4 ToneMappingNeutralPassFragment(Varying varying) : SV_TARGET
 {
-    float3 color = GetSource(varying.screenUV);
+    float3 color = GetSource(varying.screenUV).rgb;
     color = ColorGrade(color);
     color = NeutralTonemap(color);
     return float4(color, 1.0);
@@ -203,7 +279,7 @@ float4 ToneMappingNeutralPassFragment(Varying varying) : SV_TARGET
 
 float4 ToneMappingReinhardPassFragment(Varying varying) : SV_TARGET
 {
-    float3 color = GetSource(varying.screenUV);
+    float3 color = GetSource(varying.screenUV).rgb;
     color = ColorGrade(color);
     color /= color + 1.0;
     return float4(color, 1.0);

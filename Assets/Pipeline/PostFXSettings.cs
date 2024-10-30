@@ -70,6 +70,50 @@ public class PostFXSettings : ScriptableObject
     };
     public ColorAdjustmentSettings ColorAdjustments => colorAdjustments;
 
+    [Serializable]
+    public struct WhiteBalanceSettings
+    {
+        [Range(-100f, 100f)]
+        public float temperature, tint;
+    }
+
+    [SerializeField]
+    WhiteBalanceSettings whiteBalance = default;
+    public WhiteBalanceSettings WhiteBalance => whiteBalance;
+
+
+    [Serializable]
+    public struct SplitToningSettings
+    {
+        [ColorUsage(false)]
+        public Color shadows, highlights;
+
+        [Range(-100f, 100f)]
+        public float balance;
+    }
+
+    [SerializeField]
+    SplitToningSettings splitToning = new SplitToningSettings
+    {
+        shadows = Color.gray,
+        highlights = Color.gray,
+    };
+    public SplitToningSettings SplitToning => splitToning;
+
+    [Serializable]
+    public struct ChannelMixerSettings
+    {
+        public Vector3 r, g, b;
+    }
+    [SerializeField]
+    ChannelMixerSettings channelMixer = new ChannelMixerSettings
+    {
+        r = Vector3.right,
+        g = Vector3.up,
+        b = Vector3.forward,
+    };
+    public ChannelMixerSettings ChannelMixer => channelMixer;
+
     [SerializeField]
     Shader shader = default;
 
