@@ -117,20 +117,31 @@ namespace Graphics
 
             if (postFXStack.IsActive)
             {
-                if(flags > CameraClearFlags.Color)
-                {
-                    flags = CameraClearFlags.Color;
-                }
+                //if(flags > CameraClearFlags.Color)
+                //{
+                //    flags = CameraClearFlags.Color;
+                //}
 
-                _buffer.GetTemporaryRT(frameBufferId, _camera.pixelWidth, _camera.pixelHeight,
-                    32, FilterMode.Bilinear, useHDR ? RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default);
+                _buffer.GetTemporaryRT(frameBufferId,
+                    _camera.pixelWidth,
+                    _camera.pixelHeight,
+                    24,
+                    FilterMode.Bilinear,
+                    useHDR ? RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default,
+                    RenderTextureReadWrite.Linear,
+                    4,
+                    false,
+                    RenderTextureMemoryless.MSAA | RenderTextureMemoryless.Depth);
 
-                _buffer.SetRenderTarget(frameBufferId, 
-                    RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store);
+                _buffer.SetRenderTarget(frameBufferId,
+                    RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Resolve,
+                    RenderBufferLoadAction.DontCare, RenderBufferStoreAction.DontCare);
             }
-            _buffer.ClearRenderTarget(
-                flags <= CameraClearFlags.Depth,
-                flags == CameraClearFlags.Color,
+            //_buffer.ClearRenderTarget(
+            //    flags <= CameraClearFlags.Depth,
+            //    flags == CameraClearFlags.Color,
+            //    flags == CameraClearFlags.Color ? _camera.backgroundColor : Color.clear);
+            _buffer.ClearRenderTarget(true, true,
                 flags == CameraClearFlags.Color ? _camera.backgroundColor : Color.clear);
             _buffer.BeginSample(SampleName);
             ExecuteBuffer();
