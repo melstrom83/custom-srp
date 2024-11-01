@@ -46,6 +46,10 @@ public partial class PostFXStack
     int channelMixerRId = Shader.PropertyToID("_ChannelMixerR");
     int channelMixerGId = Shader.PropertyToID("_ChannelMixerG");
     int channelMixerBId = Shader.PropertyToID("_ChannelMixerB");
+    int smhShadowsId = Shader.PropertyToID("_SMHShadows");
+    int smhMidtonesId = Shader.PropertyToID("_SMHMidtones");
+    int smhHighlightsId = Shader.PropertyToID("_SMHHighlights");
+    int smhRangeId = Shader.PropertyToID("_SMHRange");
 
     ScriptableRenderContext context;
     Camera camera;
@@ -106,6 +110,16 @@ public partial class PostFXStack
         buffer.SetGlobalVector(channelMixerRId, channelMixer.r);
         buffer.SetGlobalVector(channelMixerGId, channelMixer.g);
         buffer.SetGlobalVector(channelMixerBId, channelMixer.b);
+    }
+
+    void ConfigureShadowsMidtonesHightlights()
+    {
+        var smh = settings.ShadowsMidtonesHighlights;
+        buffer.SetGlobalColor(smhShadowsId, smh.shadows.linear);
+        buffer.SetGlobalColor(smhMidtonesId, smh.midtones.linear);
+        buffer.SetGlobalColor(smhHighlightsId, smh.highlights.linear);
+        buffer.SetGlobalVector(smhRangeId, new Vector4(
+            smh.shadowsStart, smh.shadowsEnd, smh.highlightsStart, smh.highlightsEnd));
     }
 
     public void Setup(ScriptableRenderContext context, Camera camera, PostFXSettings settings,
@@ -237,7 +251,7 @@ public partial class PostFXStack
 
         buffer.SetGlobalFloat(bloomIntensityId, finalIntensity);
         buffer.SetGlobalTexture(fxSource2Id, sourceId);
-        buffer.GetTemporaryRT(bloomResultId, camera.pixelHeight, camera.pixelWidth, 0,
+        buffer.GetTemporaryRT(bloomResultId, camera.pixelWidth, camera.pixelHeight, 0,
             FilterMode.Bilinear, format);
         Draw(fromId, bloomResultId, combinePass);
         buffer.ReleaseTemporaryRT(fromId);
@@ -254,6 +268,7 @@ public partial class PostFXStack
         ConfigureWhiteBalance();
         ConfigureSplitToning();
         ConfigureChannelMixer();
+        ConfigureShadowsMidtonesHightlights();
 
         var mode = settings.ToneMapping.mode;
         var pass = Pass.ToneMappingNone + (int)mode;

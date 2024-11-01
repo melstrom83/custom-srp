@@ -4,6 +4,9 @@ using UnityEngine;
 [CreateAssetMenu(menuName = "Rendering/Custom Post FX Settings")]
 public class PostFXSettings : ScriptableObject
 {
+    [SerializeField]
+    Shader shader = default;
+
     [Serializable]
     public struct BloomSettings
     {
@@ -36,17 +39,6 @@ public class PostFXSettings : ScriptableObject
     [SerializeField]
     BloomSettings bloom = default;
     public BloomSettings Bloom => bloom;
-
-    [Serializable]
-    public struct ToneMappingSettings
-    {
-        public enum Mode { None, ACES, Neutral, Reinhard }
-        public Mode mode;
-    }
-
-    [SerializeField]
-    ToneMappingSettings toneMapping = default;
-    public ToneMappingSettings ToneMapping => toneMapping;
 
     [Serializable]
     public struct ColorAdjustmentSettings 
@@ -113,8 +105,39 @@ public class PostFXSettings : ScriptableObject
     };
     public ChannelMixerSettings ChannelMixer => channelMixer;
 
+    [Serializable]
+    public struct ShadowsMidtonesHighlightsSettings
+    {
+        [ColorUsage(false, true)]
+        public Color shadows, midtones, highlights;
+
+        [Range(0.0f, 2.0f)]
+        public float shadowsStart, shadowsEnd, highlightsStart, highlightsEnd; 
+    }
+
     [SerializeField]
-    Shader shader = default;
+    ShadowsMidtonesHighlightsSettings shadowsMidtonesHighlights = new ShadowsMidtonesHighlightsSettings
+    {
+        shadows = Color.white,
+        midtones = Color.white,
+        highlights = Color.white,
+        shadowsStart = 0.0f,
+        shadowsEnd = 0.3f,
+        highlightsStart = 0.5f,
+        highlightsEnd = 1.0f
+    };
+    public ShadowsMidtonesHighlightsSettings ShadowsMidtonesHighlights => shadowsMidtonesHighlights;
+
+    [Serializable]
+    public struct ToneMappingSettings
+    {
+        public enum Mode { None, ACES, Neutral, Reinhard }
+        public Mode mode;
+    }
+
+    [SerializeField]
+    ToneMappingSettings toneMapping = default;
+    public ToneMappingSettings ToneMapping => toneMapping;
 
     [NonSerialized]
     Material material;
