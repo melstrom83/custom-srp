@@ -21,14 +21,14 @@ MonoBehaviour:
     thresholdKnee: 0.5
     intensity: 0.5
     fadeFireflies: 1
-    mode: 1
+    mode: 0
     scatter: 0.5
   colorAdjustments:
-    postExposure: 0
-    contrast: 0
+    postExposure: -0.5
+    contrast: -25
     colorFilter: {r: 1, g: 1, b: 1, a: 0}
     hueShift: 0
-    saturation: 0
+    saturation: -25
   whiteBalance:
     temperature: 0
     tint: 0
