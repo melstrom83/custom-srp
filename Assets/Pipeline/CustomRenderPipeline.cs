@@ -7,25 +7,27 @@ namespace Graphics
 {
     public partial class CustomRenderPipeline : RenderPipeline
     {
-        private CameraRenderer _renderer = new CameraRenderer();
+        private CameraRenderer renderer = new CameraRenderer();
 
-        bool _allowHDR;
-        private bool _useDynamicBatching;
-        private bool _useGPUInstancing;
-        private ShadowSettings _shadowSettings;
-        private PostFXSettings _postFXSettings;
+        bool allowHDR;
+        private bool useDynamicBatching;
+        private bool useGPUInstancing;
+        private ShadowSettings shadowSettings;
+        private PostFXSettings postFXSettings;
+        int colorLUTResolution;
 
         public CustomRenderPipeline(bool allowHDR, bool useDynamicBatching, bool useGPUInstancing, bool useSRPBatching,
-            ShadowSettings shadowSettings, PostFXSettings postFXSettings)
+            ShadowSettings shadowSettings, PostFXSettings postFXSettings, int colorLUTResolution)
         {
-            _allowHDR = allowHDR;
-            _useDynamicBatching = useDynamicBatching;
-            _useGPUInstancing = useGPUInstancing;
+            this.allowHDR = allowHDR;
+            this.useDynamicBatching = useDynamicBatching;
+            this.useGPUInstancing = useGPUInstancing;
             GraphicsSettings.useScriptableRenderPipelineBatching = useSRPBatching;
             GraphicsSettings.lightsUseLinearIntensity = true;
 
-            _shadowSettings = shadowSettings;
-            _postFXSettings = postFXSettings;
+            this.shadowSettings = shadowSettings;
+            this.postFXSettings = postFXSettings;
+            this.colorLUTResolution = colorLUTResolution;
 
             InitializeForEditor();
         }
@@ -34,8 +36,8 @@ namespace Graphics
         {
             foreach (var camera in cameras)
             {
-                _renderer.Render(context, camera, _allowHDR, _useDynamicBatching, _useGPUInstancing,
-                    _shadowSettings, _postFXSettings);
+                renderer.Render(context, camera, allowHDR, useDynamicBatching, useGPUInstancing,
+                    shadowSettings, postFXSettings, colorLUTResolution);
             }
         }
     }

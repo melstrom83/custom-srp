@@ -5,18 +5,16 @@ namespace Graphics
 {
     public partial class CameraRenderer
     {
-        private const string _name = "Render Camera";
+        private const string name = "Render Camera";
 
-        private CommandBuffer _buffer = new CommandBuffer
+        private CommandBuffer buffer = new CommandBuffer
         {
-            name = _name
+            name = name
         };
 
-        private CullingResults _cullingResults;
-        
-        private ScriptableRenderContext _context;
-
-        private Camera _camera;
+        private CullingResults cullingResults;
+        private ScriptableRenderContext context;
+        private Camera camera;
 
         bool useHDR;
 
@@ -36,12 +34,13 @@ namespace Graphics
         
         public void Render(ScriptableRenderContext context, Camera camera,
            bool allowHDR, bool useDynamicBatching, bool useGPUInstancing,
-            ShadowSettings shadowSettings, PostFXSettings postFXSettings)
+            ShadowSettings shadowSettings, PostFXSettings postFXSettings,
+            int colorLUTResolution)
         {
-            _camera = camera;
-            _context = context;
+            this.camera = camera;
+            this.context = context;
 
-            useHDR = allowHDR && _camera.allowHDR;
+            useHDR = allowHDR && camera.allowHDR;
 
             PrepareBuffer();
             PrepareForSceneWindow();
@@ -51,11 +50,11 @@ namespace Graphics
                 return;
             }
 
-            _buffer.BeginSample(SampleName);
+            buffer.BeginSample(SampleName);
             ExecuteBuffer();
-            lighting.Setup(context, _cullingResults, shadowSettings);
-            postFXStack.Setup(context, camera, postFXSettings, useHDR);
-            _buffer.EndSample(SampleName);
+            lighting.Setup(context, cullingResults, shadowSettings);
+            postFXStack.Setup(context, camera, postFXSettings, useHDR, colorLUTResolution);
+            buffer.EndSample(SampleName);
             Setup();
             DrawVisibleGeometry(useDynamicBatching, useGPUInstancing);
             DrawUnsupportedShaders();
@@ -72,7 +71,7 @@ namespace Graphics
 
         void DrawVisibleGeometry(bool useDynamicBatching, bool useGPUInstancing)
         {
-            var sortingSettings = new SortingSettings(_camera)
+            var sortingSettings = new SortingSettings(camera)
             {
                 criteria = SortingCriteria.CommonOpaque
             };
@@ -88,22 +87,22 @@ namespace Graphics
             };
             drawingSettings.SetShaderPassName(1, litShaderTagId);
             var filteringSettings = new FilteringSettings(RenderQueueRange.all);
-            _context.DrawRenderers(_cullingResults, ref drawingSettings, ref filteringSettings);
+            context.DrawRenderers(cullingResults, ref drawingSettings, ref filteringSettings);
 
-            _context.DrawSkybox(_camera);
+            context.DrawSkybox(camera);
 
             sortingSettings.criteria = SortingCriteria.CommonTransparent;
             drawingSettings.sortingSettings = sortingSettings;
             filteringSettings.renderQueueRange = RenderQueueRange.transparent;
-            _context.DrawRenderers(_cullingResults, ref drawingSettings, ref filteringSettings);
+            context.DrawRenderers(cullingResults, ref drawingSettings, ref filteringSettings);
         }
 
         bool Cull(float maxShadowDistance)
         {
-            if (_camera.TryGetCullingParameters(out ScriptableCullingParameters p))
+            if (camera.TryGetCullingParameters(out ScriptableCullingParameters p))
             {
-                p.shadowDistance = Mathf.Min(maxShadowDistance, _camera.farClipPlane);
-                _cullingResults = _context.Cull(ref p);
+                p.shadowDistance = Mathf.Min(maxShadowDistance, camera.farClipPlane);
+                cullingResults = context.Cull(ref p);
                 return true;
             }
 
@@ -112,8 +111,8 @@ namespace Graphics
         
         void Setup()
         {
-            _context.SetupCameraProperties(_camera);
-            CameraClearFlags flags = _camera.clearFlags;
+            context.SetupCameraProperties(camera);
+            CameraClearFlags flags = camera.clearFlags;
 
             if (postFXStack.IsActive)
             {
@@ -122,17 +121,19 @@ namespace Graphics
                     flags = CameraClearFlags.Color;
                 }
 
-                _buffer.GetTemporaryRT(frameBufferId, _camera.pixelWidth, _camera.pixelHeight,
-                    32, FilterMode.Bilinear, useHDR ? RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default);
+                buffer.GetTemporaryRT(frameBufferId, camera.pixelWidth, camera.pixelHeight,
+                    32, FilterMode.Bilinear, useHDR 
+                    ? RenderTextureFormat.DefaultHDR 
+                    : RenderTextureFormat.Default);
 
-                _buffer.SetRenderTarget(frameBufferId, 
+                buffer.SetRenderTarget(frameBufferId, 
                     RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store);
             }
-            _buffer.ClearRenderTarget(
+            buffer.ClearRenderTarget(
                 flags <= CameraClearFlags.Depth,
                 flags == CameraClearFlags.Color,
-                flags == CameraClearFlags.Color ? _camera.backgroundColor : Color.clear);
-            _buffer.BeginSample(SampleName);
+                flags == CameraClearFlags.Color ? camera.backgroundColor : Color.clear);
+            buffer.BeginSample(SampleName);
             ExecuteBuffer();
         }
 
@@ -141,21 +142,21 @@ namespace Graphics
             lighting.Cleanup();
             if (postFXStack.IsActive)
             {
-                _buffer.ReleaseTemporaryRT(frameBufferId);
+                buffer.ReleaseTemporaryRT(frameBufferId);
             }
         }
 
         void Submit()
         {
-            _buffer.EndSample(SampleName);
+            buffer.EndSample(SampleName);
             ExecuteBuffer();
-            _context.Submit();
+            context.Submit();
         }
         
         void ExecuteBuffer()
         {
-            _context.ExecuteCommandBuffer(_buffer);
-            _buffer.Clear();
+            context.ExecuteCommandBuffer(buffer);
+            buffer.Clear();
         }
     }
 }

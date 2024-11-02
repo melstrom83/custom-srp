@@ -12,10 +12,11 @@ enum Pass
     BloomPrefilter,
     BloomPrefilterFireflies,
     BloomScatter,
-    ToneMappingNone,
-    ToneMappingACES,
-    ToneMappingNeutral,
-    ToneMappingReinhard
+    ColorGradingNone,
+    ColorGradingACES,
+    ColorGradingNeutral,
+    ColorGradingReinhard,
+    Final
 }
 
 public partial class PostFXStack
@@ -50,10 +51,14 @@ public partial class PostFXStack
     int smhMidtonesId = Shader.PropertyToID("_SMHMidtones");
     int smhHighlightsId = Shader.PropertyToID("_SMHHighlights");
     int smhRangeId = Shader.PropertyToID("_SMHRange");
+    int colorGradingLUTId = Shader.PropertyToID("_ColorGradingLUT");
+    int colorGradingLUTParametersId = Shader.PropertyToID("_ColorGradingLUTParameters");
+    int colorGradingLUTInLogCId = Shader.PropertyToID("_ColorGradingLUTInLogC");
 
     ScriptableRenderContext context;
     Camera camera;
     PostFXSettings settings;
+    int colorLUTResolution;
 
     public PostFXStack()
     {
@@ -123,12 +128,13 @@ public partial class PostFXStack
     }
 
     public void Setup(ScriptableRenderContext context, Camera camera, PostFXSettings settings,
-        bool useHDR)
+        bool useHDR, int colorLUTResolution)
     {
         this.context = context;
         this.camera = camera;
         this.settings = camera.cameraType <= CameraType.SceneView ? settings : null;
         this.useHDR = useHDR;
+        this.colorLUTResolution = colorLUTResolution;
 
         ApplySceneViewState();
     }
@@ -270,8 +276,22 @@ public partial class PostFXStack
         ConfigureChannelMixer();
         ConfigureShadowsMidtonesHightlights();
 
+        var lutHeight = colorLUTResolution;
+        var lutWidth = lutHeight * lutHeight;
+        buffer.GetTemporaryRT(colorGradingLUTId, lutWidth, lutHeight,
+            0, FilterMode.Bilinear, RenderTextureFormat.DefaultHDR);
+        buffer.SetGlobalVector(colorGradingLUTParametersId, new Vector4(
+            lutHeight, 0.5f / lutWidth, 0.5f / lutHeight, lutHeight / (lutHeight - 1.0f)));
+
         var mode = settings.ToneMapping.mode;
-        var pass = Pass.ToneMappingNone + (int)mode;
-        Draw(sourceId, BuiltinRenderTextureType.CameraTarget, pass);
+        var pass = Pass.ColorGradingNone + (int)mode;
+        buffer.SetGlobalFloat(colorGradingLUTInLogCId,
+            useHDR && pass != Pass.ColorGradingNone ? 1f : 0f);
+        Draw(sourceId, colorGradingLUTId, pass);
+
+        buffer.SetGlobalVector(colorGradingLUTParametersId, new Vector4(
+            1f / lutWidth, 1f / lutHeight, lutHeight - 1f));
+        Draw(sourceId, BuiltinRenderTextureType.CameraTarget, Pass.Final);
+        buffer.ReleaseTemporaryRT(colorGradingLUTId);
     }
 }

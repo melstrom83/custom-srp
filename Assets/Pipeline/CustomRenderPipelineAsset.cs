@@ -20,11 +20,19 @@ namespace Graphics
 
         [SerializeField]
         bool allowHDR = true;
+
+        public enum ColorLUTResolution
+        {
+            _16 = 16, _32 = 32, _64 = 64,
+        }
+
+        [SerializeField]
+        ColorLUTResolution colorLUTResolution = ColorLUTResolution._32;
         
         protected override RenderPipeline CreatePipeline()
         {
             return new CustomRenderPipeline(allowHDR, UseDynamicBatching, UseGPUInstancing, UseSRPBatcher,
-                ShadowSettings, PostFXSettings);
+                ShadowSettings, PostFXSettings, (int)colorLUTResolution);
         }
     }
 }

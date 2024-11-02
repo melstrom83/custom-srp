@@ -30,7 +30,7 @@ namespace Graphics
                 _errorMaterial = new Material(Shader.Find("Hidden/InternalErrorShader"));
             }
 
-            var drawingSettings = new DrawingSettings(legacyShaderTagIds[0], new SortingSettings(_camera))
+            var drawingSettings = new DrawingSettings(legacyShaderTagIds[0], new SortingSettings(camera))
             {
                 overrideMaterial = _errorMaterial
 
@@ -41,7 +41,7 @@ namespace Graphics
             }
 
             var filteringSettings = FilteringSettings.defaultValue;
-            _context.DrawRenderers(_cullingResults, ref drawingSettings, ref filteringSettings);
+            context.DrawRenderers(cullingResults, ref drawingSettings, ref filteringSettings);
         }
 
 
@@ -49,7 +49,7 @@ namespace Graphics
         {
             if (Handles.ShouldRenderGizmos())
             {
-                _context.DrawGizmos(_camera, GizmoSubset.PreImageEffects);
+                context.DrawGizmos(camera, GizmoSubset.PreImageEffects);
             }
         }
 
@@ -57,26 +57,26 @@ namespace Graphics
         {
             if (Handles.ShouldRenderGizmos())
             {
-                _context.DrawGizmos(_camera, GizmoSubset.PostImageEffects);
+                context.DrawGizmos(camera, GizmoSubset.PostImageEffects);
             }
         }
 
         partial void PrepareForSceneWindow()
         {
-            if (_camera.cameraType == CameraType.SceneView)
+            if (camera.cameraType == CameraType.SceneView)
             {
-                ScriptableRenderContext.EmitWorldGeometryForSceneView(_camera);
+                ScriptableRenderContext.EmitWorldGeometryForSceneView(camera);
             }
         }
 
         partial void PrepareBuffer()
         {
             Profiler.BeginSample("Editor Only");
-            _buffer.name = SampleName = _camera.name;
+            buffer.name = SampleName = camera.name;
             Profiler.EndSample();
         }
 #else
-        const string SampleName = _name;
+        const string SampleName = name;
 #endif
     }
 }

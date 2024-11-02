@@ -29,7 +29,7 @@ public class PostFXSettings : ScriptableObject
 
         public bool fadeFireflies;
 
-        public enum Mode { Additive, Scattering}
+        public enum Mode { Additive, Scattering }
         public Mode mode;
 
         [Range(0.05f, 0.95f)]
