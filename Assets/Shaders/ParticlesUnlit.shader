@@ -4,6 +4,8 @@ Shader "CustomSRP/Partices/Unlit"
 	{
 		_BaseMap("Texture", 2D) = "white" {}
 		_BaseColor("Color", Color) = (1.0, 1.0, 1.0, 1.0)
+		[Toggle(_VERTEX_COLORS)] _VertexColors("Vertex Colors", Float) = 0
+		[Toggle(_FLIPBOOK_BLENDING)] _FlipbookBlending("Flipbook Blending", Float) = 0
 		_Cutoff("Alpha Cutoff", Range(0.0, 1.0)) = 0.5
 		[Toggle(_CLIPPING)] _Clipping ("Alpha Clipping", Int) = 0
 		[Toggle(_MASK_MAP)] _MaskMapToogle ("Mask Map", Int) = 0
@@ -30,6 +32,8 @@ Shader "CustomSRP/Partices/Unlit"
 			ZTest [_ZTest]
 			
 			HLSLPROGRAM
+			#pragma shader_feature _VERTEX_COLORS
+			#pragma shader_feature _FLIPBOOK_BLENDING
 			#pragma shader_feature _CLIPPING
 			#pragma shader_feature _MASK_MAP
 			#pragma shader_feature _DETAIL_MAP

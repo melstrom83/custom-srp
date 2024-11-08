@@ -21,6 +21,9 @@ UNITY_INSTANCING_BUFFER_END(UnityPerMaterial)
 
 struct InputConfig
 {
+    float4 color;
+    float3 flipbookUVB;
+    bool flipbookBlending;
     float2 baseUV;
     float2 detailUV;
     bool useMask;
@@ -30,6 +33,9 @@ struct InputConfig
 InputConfig GetInputConfig(float2 baseUV, float2 detailUV = 0)
 {
     InputConfig config;
+    config.color = 1.0;
+    config.flipbookUVB = 0.0;
+    config.flipbookBlending = false;
     config.baseUV = baseUV;
     config.detailUV = detailUV;
     config.useMask = false;
@@ -72,6 +78,12 @@ float4 GetMask(InputConfig config)
 float4 GetBase(InputConfig config)
 {
     float4 map = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, config.baseUV);
+    if(config.flipbookBlending)
+    {
+        float4 add = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, config.flipbookUVB.xy);
+        map = lerp(map, add, config.flipbookUVB.z);
+    }
+  
     float4 color = INPUT_PROP(_BaseColor);
     
     if (config.useDetail)
@@ -82,7 +94,7 @@ float4 GetBase(InputConfig config)
         map.rgb *= map.rgb;
     }
   
-    return map * color;
+    return map * color * config.color;
 }
 
 float3 GetEmission(InputConfig config)

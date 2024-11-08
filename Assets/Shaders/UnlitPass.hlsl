@@ -4,7 +4,13 @@
 struct Attribute
 {
     float3 positionOS : POSITION;
+    float4 color : COLOR;
+#if defined (_FLIPBOOK_BLENDING)
+    float4 baseUV : TEXCOORD0;
+    float flipbookBlend : TEXCOORD1;
+#else
     float2 baseUV : TEXCOORD0;
+ #endif
     UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
@@ -12,8 +18,14 @@ struct Varying
 {
     float4 positionCS : SV_POSITION;
     float2 baseUV : TEXCOORD0;
+#if defined (_FLIPBOOK_BLENDING)
+    float3 flipbookUVB : FLIPBOOK;
+#endif
 #if defined (_DETAIL_MAP)
     float2 detailUV : TEXCOORD1;
+#endif
+#if defined (_VERTEX_COLORS)
+    float4 color : COLOR;
 #endif
     UNITY_VERTEX_INPUT_INSTANCE_ID
 };
@@ -27,9 +39,16 @@ Varying UnlitPassVertex(Attribute attribute)
     float3 positionWS = TransformObjectToWorld(attribute.positionOS.xyz);
     varying.positionCS = TransformWorldToHClip(positionWS);
 
-    varying.baseUV = TransformBaseUV(attribute.baseUV);
+    varying.baseUV.xy = TransformBaseUV(attribute.baseUV.xy);
+#if defined (_FLIPBOOK_BLENDING)
+    varying.flipbookUVB.xy = TransformBaseUV(attribute.baseUV.zw);
+    varying.flipbookUVB.z = attribute.flipbookBlend;
+#endif
 #if defined (_DETAIL_MAP)    
     varying.detailUV = TransformDetailUV(attribute.baseUV);
+#endif
+#if defined (_VERTEX_COLORS)    
+    varying.color = attribute.color;
 #endif
     return varying;
 }
@@ -39,6 +58,13 @@ float4 UnlitPassFragment(Varying varying) : SV_TARGET
     UNITY_SETUP_INSTANCE_ID(varying);
   
     InputConfig config = GetInputConfig(varying.baseUV);
+#if defined(_VERTEX_COLORS)
+    config.color = varying.color;
+#endif
+#if defined (_FLIPBOOK_BLENDING)
+    config.flipbookUVB = varying.flipbookUVB;
+    config.flipbookBlending = true;
+#endif
 #if defined(_DETAIL_MAP)
     config.detailUV = varying.detailUV;
     config.useDetail = true;
@@ -49,9 +75,9 @@ float4 UnlitPassFragment(Varying varying) : SV_TARGET
   
     float4 base = GetBase(config);
 
-    #if defined(_CLIPPING)
-        clip(base.a - GetClipping(config));
-    #endif
+#if defined(_CLIPPING)
+    clip(base.a - GetClipping(config));
+#endif
     
     return base;
 }

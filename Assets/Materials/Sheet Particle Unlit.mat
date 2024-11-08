@@ -7,11 +7,12 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Particle Unlit
+  m_Name: Sheet Particle Unlit
   m_Shader: {fileID: 4800000, guid: 61357c1d57b4b0d438cdf587086af93c, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
+  - _FLIPBOOK_BLENDING
   - _VERTEX_COLORS
   m_InvalidKeywords:
   - _VRTEX_COLORS
@@ -26,7 +27,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _BaseMap:
-        m_Texture: {fileID: 2800000, guid: 900eb30b997cbc344a471281032b5d45, type: 3}
+        m_Texture: {fileID: 2800000, guid: a9c6d5afc1a29354f8fa335084a2ec60, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BumpMap:
@@ -82,6 +83,7 @@ Material:
     - _DetailMapToogle: 0
     - _DetailNormalMapScale: 1
     - _DstBlend: 10
+    - _FlipbookBlending: 1
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
