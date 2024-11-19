@@ -1,4 +1,6 @@
+using System.Dynamic;
 using UnityEditor;
+using UnityEditor.PackageManager;
 using UnityEngine;
 using UnityEngine.Rendering;
 using static PostFXSettings;
@@ -31,6 +33,8 @@ public partial class PostFXStack
     int bloomPyramidId;
 
     bool useHDR;
+
+    static Rect fullViewRect = new Rect(0.0f, 1.0f, 1.0f, 1.0f); 
 
     int fxSourceId = Shader.PropertyToID("_PostFXSource");
     int fxSource2Id = Shader.PropertyToID("_PostFXSource2");
@@ -147,6 +151,18 @@ public partial class PostFXStack
         buffer.SetRenderTarget(to, RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store);
         buffer.DrawProcedural(Matrix4x4.identity, settings.Material, (int)pass,
             MeshTopology.Triangles, 3);
+    }
+
+    void DrawFinal(RenderTargetIdentifier from)
+    {
+        buffer.SetGlobalTexture(fxSourceId, from);
+        buffer.SetRenderTarget(BuiltinRenderTextureType.CameraTarget,
+            camera.rect == fullViewRect ?
+            RenderBufferLoadAction.DontCare : RenderBufferLoadAction.Load,
+            RenderBufferStoreAction.Store);
+        buffer.SetViewport(camera.pixelRect);
+        buffer.DrawProcedural(Matrix4x4.identity, settings.Material,
+            (int)Pass.Final, MeshTopology.Triangles, 3);
     }
 
     public void Render(int sourceId)
@@ -291,7 +307,7 @@ public partial class PostFXStack
 
         buffer.SetGlobalVector(colorGradingLUTParametersId, new Vector4(
             1f / lutWidth, 1f / lutHeight, lutHeight - 1f));
-        Draw(sourceId, BuiltinRenderTextureType.CameraTarget, Pass.Final);
+        DrawFinal(sourceId);
         buffer.ReleaseTemporaryRT(colorGradingLUTId);
     }
 }
