@@ -79,7 +79,7 @@ float4 UnlitPassFragment(Varying varying) : SV_TARGET
     clip(base.a - GetClipping(config));
 #endif
     
-    return base;
+    return float4(base.rgb, GetFinalAlpha(base.a));
 }
 
 #endif

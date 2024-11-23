@@ -142,6 +142,9 @@ Shader "Hidden/CustomSRP/PostFXStack"
 		Pass
 		{
 			Name "Final"
+
+			Blend One OneMinusSrcAlpha
+
 			HLSLPROGRAM
 			#pragma target 3.5
 			#pragma vertex DefaultPassVertex

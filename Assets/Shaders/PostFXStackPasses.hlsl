@@ -132,8 +132,8 @@ float4 BloomCombinePassFragment(Varying varying) : SV_TARGET
     float3 lowRes = _BloomBicubicUpsampling
         ? GetSourceBicubic(varying.screenUV).rgb
         : GetSource(varying.screenUV).rgb;
-    float3 highRes = GetSource2(varying.screenUV).rgb;
-    return float4(lowRes * _BloomIntensity + highRes, 1.0);
+    float4 highRes = GetSource2(varying.screenUV);
+    return float4(lowRes * _BloomIntensity + highRes.rgb, highRes.a);
 }
 
 float3 ApplyBloomThreshold(float3 color)
@@ -181,9 +181,9 @@ float4 BloomScatterPassFragment(Varying varying) : SV_TARGET
     float3 lowRes = _BloomBicubicUpsampling
         ? GetSourceBicubic(varying.screenUV).rgb
         : GetSource(varying.screenUV).rgb;
-    float3 highRes = GetSource2(varying.screenUV).rgb;
-    lowRes += highRes - ApplyBloomThreshold(highRes);
-    return float4(lerp(highRes, lowRes, _BloomIntensity), 1.0);
+    float4 highRes = GetSource2(varying.screenUV);
+    lowRes += highRes.rgb - ApplyBloomThreshold(highRes.rgb);
+    return float4(lerp(highRes.rgb, lowRes, _BloomIntensity), highRes.a);
 }
 
 float Luminance(float3 color, bool useACES)

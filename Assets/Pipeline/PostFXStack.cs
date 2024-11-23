@@ -1,6 +1,4 @@
-using System.Dynamic;
 using UnityEditor;
-using UnityEditor.PackageManager;
 using UnityEngine;
 using UnityEngine.Rendering;
 using static PostFXSettings;
@@ -34,6 +32,8 @@ public partial class PostFXStack
 
     bool useHDR;
 
+    CameraSettings.FinalBlendMode finalBlendMode;
+
     static Rect fullViewRect = new Rect(0.0f, 1.0f, 1.0f, 1.0f); 
 
     int fxSourceId = Shader.PropertyToID("_PostFXSource");
@@ -58,6 +58,9 @@ public partial class PostFXStack
     int colorGradingLUTId = Shader.PropertyToID("_ColorGradingLUT");
     int colorGradingLUTParametersId = Shader.PropertyToID("_ColorGradingLUTParameters");
     int colorGradingLUTInLogCId = Shader.PropertyToID("_ColorGradingLUTInLogC");
+
+    int finalSrcBlendId = Shader.PropertyToID("_FinalSrcBlend");
+    int finalDstBlendId = Shader.PropertyToID("_FinalDstBlend");
 
     ScriptableRenderContext context;
     Camera camera;
@@ -132,8 +135,9 @@ public partial class PostFXStack
     }
 
     public void Setup(ScriptableRenderContext context, Camera camera, PostFXSettings settings,
-        bool useHDR, int colorLUTResolution)
+        bool useHDR, int colorLUTResolution, CameraSettings.FinalBlendMode finalBlendMode)
     {
+        this.finalBlendMode = finalBlendMode;
         this.context = context;
         this.camera = camera;
         this.settings = camera.cameraType <= CameraType.SceneView ? settings : null;
@@ -155,9 +159,11 @@ public partial class PostFXStack
 
     void DrawFinal(RenderTargetIdentifier from)
     {
+        buffer.SetGlobalFloat(finalSrcBlendId, (float)finalBlendMode.src);
+        buffer.SetGlobalFloat(finalDstBlendId, (float)finalBlendMode.dst);
         buffer.SetGlobalTexture(fxSourceId, from);
         buffer.SetRenderTarget(BuiltinRenderTextureType.CameraTarget,
-            camera.rect == fullViewRect ?
+            finalBlendMode.dst == BlendMode.Zero && camera.rect == fullViewRect ?
             RenderBufferLoadAction.DontCare : RenderBufferLoadAction.Load,
             RenderBufferStoreAction.Store);
         buffer.SetViewport(camera.pixelRect);

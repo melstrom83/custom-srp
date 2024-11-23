@@ -7,6 +7,8 @@ namespace Graphics
     {
         private const string name = "Render Camera";
 
+        static CameraSettings defaultCameraSettings = new CameraSettings();
+
         private CommandBuffer buffer = new CommandBuffer
         {
             name = name
@@ -40,6 +42,9 @@ namespace Graphics
             this.camera = camera;
             this.context = context;
 
+            var crpCamera = camera.GetComponent<CustomRenderPipelineCamera>();
+            var cameraSettings = crpCamera ? crpCamera.Settings : defaultCameraSettings;
+
             useHDR = allowHDR && camera.allowHDR;
 
             PrepareBuffer();
@@ -53,7 +58,8 @@ namespace Graphics
             buffer.BeginSample(SampleName);
             ExecuteBuffer();
             lighting.Setup(context, cullingResults, shadowSettings);
-            postFXStack.Setup(context, camera, postFXSettings, useHDR, colorLUTResolution);
+            postFXStack.Setup(context, camera, postFXSettings, useHDR,
+                colorLUTResolution, cameraSettings.finalBlendMode);
             buffer.EndSample(SampleName);
             Setup();
             DrawVisibleGeometry(useDynamicBatching, useGPUInstancing);
