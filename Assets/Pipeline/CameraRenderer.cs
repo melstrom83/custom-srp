@@ -45,6 +45,11 @@ namespace Graphics
             var crpCamera = camera.GetComponent<CustomRenderPipelineCamera>();
             var cameraSettings = crpCamera ? crpCamera.Settings : defaultCameraSettings;
 
+            if(cameraSettings.overridePostFX)
+            {
+                postFXSettings = cameraSettings.postFXSettings;
+            }
+
             useHDR = allowHDR && camera.allowHDR;
 
             PrepareBuffer();

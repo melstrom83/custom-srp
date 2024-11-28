@@ -27,11 +27,13 @@ struct InputConfig
     bool flipbookBlending;
     float2 baseUV;
     float2 detailUV;
+    float2 positionSS;
+    float depth;
     bool useMask;
     bool useDetail;
 };
 
-InputConfig GetInputConfig(float2 baseUV, float2 detailUV = 0)
+InputConfig GetInputConfig(float4 positionSS, float2 baseUV, float2 detailUV = 0)
 {
     InputConfig config;
     config.color = 1.0;
@@ -39,6 +41,8 @@ InputConfig GetInputConfig(float2 baseUV, float2 detailUV = 0)
     config.flipbookBlending = false;
     config.baseUV = baseUV;
     config.detailUV = detailUV;
+    config.positionSS = positionSS.xy;
+    config.depth = positionSS.w;
     config.useMask = false;
     config.useDetail = false;
     return config;

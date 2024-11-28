@@ -62,7 +62,8 @@ float4 LitPassFragment(Varying varying) : SV_TARGET
 {
     UNITY_SETUP_INSTANCE_ID(varying);
   
-    InputConfig config = GetInputConfig(varying.baseUV);
+    InputConfig config = GetInputConfig(varying.positionCS, varying.baseUV);
+    //return float4(config.depth.xxx / 20.0, 1.0);
 #if defined(_DETAIL_MAP)
     config.detailUV = varying.detailUV;
     config.useDetail = true;

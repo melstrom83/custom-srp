@@ -37,7 +37,7 @@ Varying MetaPassVertex(Attribute attribute)
 
 float4 MetaPassFragment(Varying varying) : SV_TARGET
 {
-    InputConfig config = GetInputConfig(varying.baseUV);
+    InputConfig config = GetInputConfig(varying.positionCS, varying.baseUV);
 
     float4 base = GetBase(config);
 

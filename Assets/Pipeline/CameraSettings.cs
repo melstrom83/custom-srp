@@ -10,6 +10,9 @@ public class CameraSettings
         public BlendMode src, dst;
     }
 
+    public bool overridePostFX = false;
+    public PostFXSettings postFXSettings = default;
+
     public FinalBlendMode finalBlendMode = new FinalBlendMode
     {
         src = BlendMode.One,
