@@ -23,7 +23,10 @@ namespace Graphics
         private static ShaderTagId unlitShaderTagId = new ShaderTagId("SRPDefaultUnlit");
         private static ShaderTagId litShaderTagId = new ShaderTagId("CustomLit");
 
-        static int frameBufferId = Shader.PropertyToID("_CameraFrameBuffer");
+        //static int frameBufferId = Shader.PropertyToID("_CameraFrameBuffer");
+
+        static int colorAttachmentId = Shader.PropertyToID("_CameraColorAttachment");
+        static int depthAttachmentId = Shader.PropertyToID("_CameraDepthAttachment");
 
         partial void DrawUnsupportedShaders ();
         partial void DrawGizmosBeforeFX();
@@ -72,7 +75,7 @@ namespace Graphics
             DrawGizmosBeforeFX();
             if(postFXStack.IsActive)
             {
-                postFXStack.Render(frameBufferId);
+                postFXStack.Render(colorAttachmentId);
             }
             DrawGizmosAfterFX();
             Cleanup();
@@ -132,13 +135,20 @@ namespace Graphics
                     flags = CameraClearFlags.Color;
                 }
 
-                buffer.GetTemporaryRT(frameBufferId, camera.pixelWidth, camera.pixelHeight,
-                    32, FilterMode.Bilinear, useHDR 
+                buffer.GetTemporaryRT(colorAttachmentId, camera.pixelWidth, camera.pixelHeight,
+                    0, FilterMode.Bilinear, useHDR 
                     ? RenderTextureFormat.DefaultHDR 
                     : RenderTextureFormat.Default);
 
-                buffer.SetRenderTarget(frameBufferId, 
-                    RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store);
+                buffer.GetTemporaryRT(depthAttachmentId, camera.pixelWidth, camera.pixelHeight,
+                    32, FilterMode.Point, RenderTextureFormat.Depth);
+
+                buffer.SetRenderTarget(
+                    colorAttachmentId, 
+                    RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store,
+                    depthAttachmentId,
+                    RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store
+                );
             }
             buffer.ClearRenderTarget(
                 flags <= CameraClearFlags.Depth,
@@ -153,7 +163,8 @@ namespace Graphics
             lighting.Cleanup();
             if (postFXStack.IsActive)
             {
-                buffer.ReleaseTemporaryRT(frameBufferId);
+                buffer.ReleaseTemporaryRT(colorAttachmentId);
+                buffer.ReleaseTemporaryRT(depthAttachmentId);
             }
         }
 

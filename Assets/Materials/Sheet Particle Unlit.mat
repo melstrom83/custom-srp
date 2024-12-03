@@ -13,6 +13,7 @@ Material:
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
   - _FLIPBOOK_BLENDING
+  - _NEAR_FADE
   - _VERTEX_COLORS
   m_InvalidKeywords:
   - _VRTEX_COLORS
@@ -90,6 +91,9 @@ Material:
     - _MaskMapToogle: 0
     - _Metallic: 0
     - _Mode: 0
+    - _NearFade: 1
+    - _NearFadeDisctance: 1
+    - _NearFadeRange: 1
     - _OcclusionStrength: 1
     - _Parallax: 0.02
     - _SmoothnessTextureChannel: 0

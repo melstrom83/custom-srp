@@ -67,4 +67,18 @@ float3 NormalTangentToWorld(float3 normalTS, float3 normalWS, float4 tangentWS)
   return TransformTangentToWorld(normalTS, tangentToWorld);
 }
 
+bool IsOrthographicCamera()
+{
+  return unity_OrthoParams.w;
+}
+
+float OrtographicDepthBufferToLinear(float rawDepth)
+{
+  #if UNITY_REVERSED_Z
+    rawDepth = 1.0 - rawDepth;
+  #endif
+  
+  return (_ProjectionParams.z - _ProjectionParams.y) * rawDepth + _ProjectionParams.y;
+}
+
 #endif

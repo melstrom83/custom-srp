@@ -12,6 +12,8 @@ UNITY_INSTANCING_BUFFER_START(UnityPerMaterial)
     UNITY_DEFINE_INSTANCED_PROP(float4, _BaseMap_ST)
     UNITY_DEFINE_INSTANCED_PROP(float4, _DetailMap_ST)
     UNITY_DEFINE_INSTANCED_PROP(float4, _BaseColor)
+    UNITY_DEFINE_INSTANCED_PROP(float, _NearFadeDistance)
+    UNITY_DEFINE_INSTANCED_PROP(float, _NearFadeRange)
     UNITY_DEFINE_INSTANCED_PROP(float, _Cutoff)
     UNITY_DEFINE_INSTANCED_PROP(float, _ZWrite)
     UNITY_DEFINE_INSTANCED_PROP(float, _DetailAlbedo)
@@ -31,6 +33,7 @@ struct InputConfig
     float depth;
     bool useMask;
     bool useDetail;
+    bool nearFade;
 };
 
 InputConfig GetInputConfig(float4 positionSS, float2 baseUV, float2 detailUV = 0)
@@ -42,9 +45,11 @@ InputConfig GetInputConfig(float4 positionSS, float2 baseUV, float2 detailUV = 0
     config.baseUV = baseUV;
     config.detailUV = detailUV;
     config.positionSS = positionSS.xy;
-    config.depth = positionSS.w;
+    config.depth = IsOrthographicCamera() ?
+      OrtographicDepthBufferToLinear(positionSS.z) : positionSS.w;
     config.useMask = false;
     config.useDetail = false;
+    config.nearFade = false;
     return config;
 }
 
@@ -87,6 +92,12 @@ float4 GetBase(InputConfig config)
     {
         float4 add = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, config.flipbookUVB.xy);
         map = lerp(map, add, config.flipbookUVB.z);
+    }
+  
+    if(config.nearFade)
+    {
+        float nearAttenuation = (config.depth - INPUT_PROP(_NearFadeDistance)) / INPUT_PROP(_NearFadeRange);
+        map.a *= saturate(nearAttenuation);
     }
   
     float4 color = INPUT_PROP(_BaseColor);

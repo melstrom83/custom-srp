@@ -66,6 +66,9 @@ float4 UnlitPassFragment(Varying varying) : SV_TARGET
     config.flipbookUVB = varying.flipbookUVB;
     config.flipbookBlending = true;
 #endif
+#if defined (_NEAR_FADE)
+    config.nearFade = true;
+#endif
 #if defined(_DETAIL_MAP)
     config.detailUV = varying.detailUV;
     config.useDetail = true;

@@ -47,7 +47,8 @@ InputConfig GetInputConfig(float4 positionSS, float2 baseUV, float2 detailUV = 0
     config.baseUV = baseUV;
     config.detailUV = detailUV;
     config.positionSS = positionSS.xy;
-    config.depth = positionSS.w;
+    config.depth = IsOrthographicCamera() ?
+      OrtographicDepthBufferToLinear(positionSS.z) : positionSS.w;
     config.useMask = false;
     config.useDetail = false;
     return config;

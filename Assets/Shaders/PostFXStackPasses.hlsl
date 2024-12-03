@@ -9,7 +9,6 @@ TEXTURE2D(_PostFXSource2);
 TEXTURE2D(_ColorGradingLUT);
 SAMPLER(sampler_linear_clamp);
 
-float4 _ProjectionParams;
 float4 _PostFXSource_TexelSize;
 
 float4 _BloomThreshold;
