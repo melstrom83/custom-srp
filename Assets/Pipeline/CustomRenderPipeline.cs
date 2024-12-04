@@ -7,7 +7,7 @@ namespace Graphics
 {
     public partial class CustomRenderPipeline : RenderPipeline
     {
-        private CameraRenderer renderer = new CameraRenderer();
+        private CameraRenderer renderer; // = new CameraRenderer();
 
         bool allowHDR;
         private bool useDynamicBatching;
@@ -16,8 +16,10 @@ namespace Graphics
         private PostFXSettings postFXSettings;
         int colorLUTResolution;
 
+        partial void DisposeForEditor();
+
         public CustomRenderPipeline(bool allowHDR, bool useDynamicBatching, bool useGPUInstancing, bool useSRPBatching,
-            ShadowSettings shadowSettings, PostFXSettings postFXSettings, int colorLUTResolution)
+            ShadowSettings shadowSettings, PostFXSettings postFXSettings, int colorLUTResolution, Shader cameraRendererShader)
         {
             this.allowHDR = allowHDR;
             this.useDynamicBatching = useDynamicBatching;
@@ -30,6 +32,8 @@ namespace Graphics
             this.colorLUTResolution = colorLUTResolution;
 
             InitializeForEditor();
+
+            renderer = new CameraRenderer(cameraRendererShader);
         }
 
         protected override void Render(ScriptableRenderContext context, Camera[] cameras)
@@ -39,6 +43,13 @@ namespace Graphics
                 renderer.Render(context, camera, allowHDR, useDynamicBatching, useGPUInstancing,
                     shadowSettings, postFXSettings, colorLUTResolution);
             }
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            DisposeForEditor();
+            renderer.Dispose();
         }
     }
 }

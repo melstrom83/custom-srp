@@ -28,11 +28,14 @@ namespace Graphics
 
         [SerializeField]
         ColorLUTResolution colorLUTResolution = ColorLUTResolution._32;
-        
+
+        [SerializeField]
+        Shader cameraRendererShader = default;
+
         protected override RenderPipeline CreatePipeline()
         {
             return new CustomRenderPipeline(allowHDR, UseDynamicBatching, UseGPUInstancing, UseSRPBatcher,
-                ShadowSettings, PostFXSettings, (int)colorLUTResolution);
+                ShadowSettings, PostFXSettings, (int)colorLUTResolution, cameraRendererShader);
         }
     }
 }

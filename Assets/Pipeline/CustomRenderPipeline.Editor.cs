@@ -57,9 +57,8 @@ namespace Graphics
                 }
             };
 
-        protected override void Dispose(bool disposing)
+        protected void DisposeForEditor(bool disposing)
         {
-            base.Dispose(disposing);
             Lightmapping.ResetDelegate();
         }
 #endif

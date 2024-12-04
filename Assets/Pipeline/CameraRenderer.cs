@@ -27,7 +27,9 @@ namespace Graphics
 
         static int colorAttachmentId = Shader.PropertyToID("_CameraColorAttachment");
         static int depthAttachmentId = Shader.PropertyToID("_CameraDepthAttachment");
-
+        static int depthTextureId = Shader.PropertyToID("_CameraDepthTexture");
+        static int sourceTextureId = Shader.PropertyToID("_SourceTexture");
+        
         partial void DrawUnsupportedShaders ();
         partial void DrawGizmosBeforeFX();
         partial void DrawGizmosAfterFX();
@@ -36,6 +38,16 @@ namespace Graphics
         
         Lighting lighting = new Lighting();
         PostFXStack postFXStack = new PostFXStack();
+
+        bool useDepthTexture;
+        bool useIntermediateBuffer;
+
+        Material material;
+
+        public CameraRenderer(Shader shader)
+        {
+            material = CoreUtils.CreateEngineMaterial(shader);
+        }
         
         public void Render(ScriptableRenderContext context, Camera camera,
            bool allowHDR, bool useDynamicBatching, bool useGPUInstancing,
@@ -47,6 +59,8 @@ namespace Graphics
 
             var crpCamera = camera.GetComponent<CustomRenderPipelineCamera>();
             var cameraSettings = crpCamera ? crpCamera.Settings : defaultCameraSettings;
+
+            useDepthTexture = true;
 
             if(cameraSettings.overridePostFX)
             {
@@ -77,10 +91,22 @@ namespace Graphics
             {
                 postFXStack.Render(colorAttachmentId);
             }
+            else if(useIntermediateBuffer)
+            {
+                Draw(colorAttachmentId, BuiltinRenderTextureType.CameraTarget); ;
+                ExecuteBuffer();
+            }
             DrawGizmosAfterFX();
             Cleanup();
             
             Submit();
+        }
+
+        void Draw(RenderTargetIdentifier from, RenderTargetIdentifier to)
+        {
+            buffer.SetGlobalTexture(sourceTextureId, from);
+            buffer.SetRenderTarget(to, RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store);
+            buffer.DrawProcedural(Matrix4x4.identity, material, 0, MeshTopology.Triangles, 3);
         }
 
         void DrawVisibleGeometry(bool useDynamicBatching, bool useGPUInstancing)
@@ -104,6 +130,7 @@ namespace Graphics
             context.DrawRenderers(cullingResults, ref drawingSettings, ref filteringSettings);
 
             context.DrawSkybox(camera);
+            CopyAttachments();
 
             sortingSettings.criteria = SortingCriteria.CommonTransparent;
             drawingSettings.sortingSettings = sortingSettings;
@@ -128,7 +155,9 @@ namespace Graphics
             context.SetupCameraProperties(camera);
             CameraClearFlags flags = camera.clearFlags;
 
-            if (postFXStack.IsActive)
+            useIntermediateBuffer = useDepthTexture || postFXStack.IsActive;
+
+            if (useIntermediateBuffer)
             {
                 if(flags > CameraClearFlags.Color)
                 {
@@ -161,10 +190,29 @@ namespace Graphics
         void Cleanup()
         {
             lighting.Cleanup();
-            if (postFXStack.IsActive)
+            if (useIntermediateBuffer)
             {
                 buffer.ReleaseTemporaryRT(colorAttachmentId);
                 buffer.ReleaseTemporaryRT(depthAttachmentId);
+
+                if (useDepthTexture)
+                {
+                    buffer.ReleaseTemporaryRT(depthAttachmentId); buffer.ReleaseTemporaryRT(depthTextureId);
+                }
+            }
+        }
+
+        void CopyAttachments()
+        {
+            if(useDepthTexture)
+            {
+                buffer.GetTemporaryRT(depthTextureId, camera.pixelWidth, camera.pixelHeight,
+                    32, FilterMode.Point, RenderTextureFormat.Depth);
+
+                buffer.CopyTexture(depthAttachmentId, depthTextureId);
+                ExecuteBuffer();
+
+
             }
         }
 
@@ -179,6 +227,11 @@ namespace Graphics
         {
             context.ExecuteCommandBuffer(buffer);
             buffer.Clear();
+        }
+
+        public void Dispose()
+        {
+            CoreUtils.Destroy(material);
         }
     }
 }
