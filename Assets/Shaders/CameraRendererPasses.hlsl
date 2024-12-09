@@ -41,4 +41,9 @@ float4 CopyPassFragment(Varying varying) : SV_Target
     return SAMPLE_TEXTURE2D_LOD(_SourceTexture, sampler_linear_clamp, varying.screenUV, 0);
 }
 
+float4 CopyDepthPassFragment(Varying varying) : SV_Target
+{
+    return SAMPLE_DEPTH_TEXTURE2D_LOD(_SourceTexture, sampler_point_clamp, varying.screenUV, 0);
+}
+
 #endif

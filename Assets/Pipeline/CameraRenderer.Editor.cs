@@ -49,6 +49,11 @@ namespace Graphics
         {
             if (Handles.ShouldRenderGizmos())
             {
+                if (useIntermediateBuffer)
+                {
+                    Draw(depthAttachmentId, BuiltinRenderTextureType.CameraTarget, true);
+                    ExecuteBuffer();
+                }
                 context.DrawGizmos(camera, GizmoSubset.PreImageEffects);
             }
         }
@@ -57,6 +62,11 @@ namespace Graphics
         {
             if (Handles.ShouldRenderGizmos())
             {
+                if (postFXStack.IsActive)
+                {
+                    Draw(depthAttachmentId, BuiltinRenderTextureType.CameraTarget, true);
+                    ExecuteBuffer();
+                }
                 context.DrawGizmos(camera, GizmoSubset.PostImageEffects);
             }
         }

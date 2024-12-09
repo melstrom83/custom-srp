@@ -14,8 +14,11 @@ Shader "CustomSRP/Partices/Unlit"
 		_DetailMap("Details", 2D) = "linearGrey" {}
 		_DetailAlbedo("Detail Albedo", Range(0.0, 1.0)) = 1
 		[Toggle(_NEAR_FADE)] _NearFade ("Near Fade", Int) = 0
-		_NearFadeDisctance("Near Fade Distance", Range(0.0, 10.0)) = 1
+		_NearFadeDisctance("Near Fade Distance", Range(0.0, 10.0)) = 1.0
 		_NearFadeRange("Near Fade Range", Range(0.0, 10.0)) = 1.0
+		[Toggle(_SOFT_PARTICLES)] _SoftParticles ("Soft Particles", Int) = 0
+		_SoftParticleDisctance("Soft Particle Distance", Range(0.0, 10.0)) = 0.0
+		_SoftParticleRange("Soft Particle Range", Range(0.0, 10.0)) = 1.0
 		[Enum(UnityEngine.Rendering.BlendMode)] _DstBlend ("Dst Blend", Int) = 0
 		[Enum(Off, 0, On, 1)] _ZWrite ("Z Write", Int) = 1
 		[Enum(UnityEngine.Rendering.CompareFunction)] _ZTest ("Z Test", Int) = 4
@@ -41,6 +44,7 @@ Shader "CustomSRP/Partices/Unlit"
 			#pragma shader_feature _MASK_MAP
 			#pragma shader_feature _DETAIL_MAP
 			#pragma shader_feature _NEAR_FADE
+			#pragma shader_feature _SOFT_PARTICLES
 			#pragma multi_compile_instancing
 			#pragma vertex UnlitPassVertex
 			#pragma fragment UnlitPassFragment

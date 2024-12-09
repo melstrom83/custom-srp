@@ -72,7 +72,7 @@ bool IsOrthographicCamera()
   return unity_OrthoParams.w;
 }
 
-float OrtographicDepthBufferToLinear(float rawDepth)
+float OrthographicDepthBufferToLinear(float rawDepth)
 {
   #if UNITY_REVERSED_Z
     rawDepth = 1.0 - rawDepth;

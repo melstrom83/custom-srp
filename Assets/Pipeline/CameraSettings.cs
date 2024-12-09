@@ -10,6 +10,8 @@ public class CameraSettings
         public BlendMode src, dst;
     }
 
+    public bool copyDepth = true;
+
     public bool overridePostFX = false;
     public PostFXSettings postFXSettings = default;
 

@@ -19,7 +19,10 @@ namespace Graphics
         PostFXSettings PostFXSettings = default;
 
         [SerializeField]
-        bool allowHDR = true;
+        CameraBufferSettings cameraBuffer = new CameraBufferSettings
+        { 
+            allowHDR = true
+        };
 
         public enum ColorLUTResolution
         {
@@ -34,7 +37,7 @@ namespace Graphics
 
         protected override RenderPipeline CreatePipeline()
         {
-            return new CustomRenderPipeline(allowHDR, UseDynamicBatching, UseGPUInstancing, UseSRPBatcher,
+            return new CustomRenderPipeline(cameraBuffer, UseDynamicBatching, UseGPUInstancing, UseSRPBatcher,
                 ShadowSettings, PostFXSettings, (int)colorLUTResolution, cameraRendererShader);
         }
     }

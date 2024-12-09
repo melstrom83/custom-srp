@@ -9,7 +9,7 @@ namespace Graphics
     {
         private CameraRenderer renderer; // = new CameraRenderer();
 
-        bool allowHDR;
+        CameraBufferSettings cameraBufferSettings;
         private bool useDynamicBatching;
         private bool useGPUInstancing;
         private ShadowSettings shadowSettings;
@@ -18,10 +18,11 @@ namespace Graphics
 
         partial void DisposeForEditor();
 
-        public CustomRenderPipeline(bool allowHDR, bool useDynamicBatching, bool useGPUInstancing, bool useSRPBatching,
+        public CustomRenderPipeline(CameraBufferSettings cameraBufferSettings,
+            bool useDynamicBatching, bool useGPUInstancing, bool useSRPBatching,
             ShadowSettings shadowSettings, PostFXSettings postFXSettings, int colorLUTResolution, Shader cameraRendererShader)
         {
-            this.allowHDR = allowHDR;
+            this.cameraBufferSettings = cameraBufferSettings;
             this.useDynamicBatching = useDynamicBatching;
             this.useGPUInstancing = useGPUInstancing;
             GraphicsSettings.useScriptableRenderPipelineBatching = useSRPBatching;
@@ -40,7 +41,7 @@ namespace Graphics
         {
             foreach (var camera in cameras)
             {
-                renderer.Render(context, camera, allowHDR, useDynamicBatching, useGPUInstancing,
+                renderer.Render(context, camera, cameraBufferSettings, useDynamicBatching, useGPUInstancing,
                     shadowSettings, postFXSettings, colorLUTResolution);
             }
         }

@@ -7,6 +7,8 @@ namespace Graphics
     {
         private const string name = "Render Camera";
 
+        static bool copyTextureSupported = SystemInfo.copyTextureSupport > CopyTextureSupport.None;
+        
         static CameraSettings defaultCameraSettings = new CameraSettings();
 
         private CommandBuffer buffer = new CommandBuffer
@@ -43,14 +45,23 @@ namespace Graphics
         bool useIntermediateBuffer;
 
         Material material;
+        Texture2D missingTexture;
 
         public CameraRenderer(Shader shader)
         {
             material = CoreUtils.CreateEngineMaterial(shader);
+            missingTexture = new Texture2D(1, 1)
+            {
+                hideFlags = HideFlags.HideAndDontSave,
+                name = "Missing"
+            };
+            missingTexture.SetPixel(0, 0, Color.gray);
+            missingTexture.Apply(true, true);
         }
         
         public void Render(ScriptableRenderContext context, Camera camera,
-           bool allowHDR, bool useDynamicBatching, bool useGPUInstancing,
+            CameraBufferSettings cameraBufferSettings,
+            bool useDynamicBatching, bool useGPUInstancing,
             ShadowSettings shadowSettings, PostFXSettings postFXSettings,
             int colorLUTResolution)
         {
@@ -60,14 +71,22 @@ namespace Graphics
             var crpCamera = camera.GetComponent<CustomRenderPipelineCamera>();
             var cameraSettings = crpCamera ? crpCamera.Settings : defaultCameraSettings;
 
-            useDepthTexture = true;
+            //useDepthTexture = true;
+            if(camera.cameraType == CameraType.Reflection)
+            {
+                useDepthTexture = cameraBufferSettings.copyDepthReflection;
+            }
+            else 
+            {
+                useDepthTexture = cameraBufferSettings.copyDepth && cameraSettings.copyDepth;
+            }
 
             if(cameraSettings.overridePostFX)
             {
                 postFXSettings = cameraSettings.postFXSettings;
             }
 
-            useHDR = allowHDR && camera.allowHDR;
+            useHDR = cameraBufferSettings.allowHDR && camera.allowHDR;
 
             PrepareBuffer();
             PrepareForSceneWindow();
@@ -102,11 +121,11 @@ namespace Graphics
             Submit();
         }
 
-        void Draw(RenderTargetIdentifier from, RenderTargetIdentifier to)
+        void Draw(RenderTargetIdentifier from, RenderTargetIdentifier to, bool isDepth = false)
         {
             buffer.SetGlobalTexture(sourceTextureId, from);
             buffer.SetRenderTarget(to, RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store);
-            buffer.DrawProcedural(Matrix4x4.identity, material, 0, MeshTopology.Triangles, 3);
+            buffer.DrawProcedural(Matrix4x4.identity, material, isDepth ? 1 : 0, MeshTopology.Triangles, 3);
         }
 
         void DrawVisibleGeometry(bool useDynamicBatching, bool useGPUInstancing)
@@ -184,6 +203,7 @@ namespace Graphics
                 flags == CameraClearFlags.Color,
                 flags == CameraClearFlags.Color ? camera.backgroundColor : Color.clear);
             buffer.BeginSample(SampleName);
+            buffer.SetGlobalTexture(depthTextureId, missingTexture);
             ExecuteBuffer();
         }
 
@@ -209,10 +229,22 @@ namespace Graphics
                 buffer.GetTemporaryRT(depthTextureId, camera.pixelWidth, camera.pixelHeight,
                     32, FilterMode.Point, RenderTextureFormat.Depth);
 
-                buffer.CopyTexture(depthAttachmentId, depthTextureId);
+                if(copyTextureSupported)
+                {
+                    buffer.CopyTexture(depthAttachmentId, depthTextureId);
+                }
+                else
+                {
+                    Draw(depthAttachmentId, depthTextureId, true);
+                    buffer.SetRenderTarget(
+                        colorAttachmentId,
+                        RenderBufferLoadAction.Load, RenderBufferStoreAction.Store,
+                        depthAttachmentId,
+                        RenderBufferLoadAction.Load, RenderBufferStoreAction.Store
+                    );
+                }
+                
                 ExecuteBuffer();
-
-
             }
         }
 
@@ -232,6 +264,7 @@ namespace Graphics
         public void Dispose()
         {
             CoreUtils.Destroy(material);
+            CoreUtils.Destroy(missingTexture);
         }
     }
 }

@@ -43,6 +43,8 @@ float4x4 unity_MatrixInvVP;
 float3 _WorldSpaceCameraPos;
 
 float4 _ProjectionParams;
+float4 _ScreenParams;
+float4 _ZBufferParams;
 float4 unity_OrthoParams;
 
 #endif

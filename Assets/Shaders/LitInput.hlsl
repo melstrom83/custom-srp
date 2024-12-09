@@ -1,6 +1,9 @@
 #ifndef CUSTOM_LIT_INPUT_INCLUDED
 #define CUSTOM_LIT_INPUT_INCLUDED
 
+TEXTURE2D(_CameraDepthTexture);
+SAMPLER(sampler_point_clamp);
+
 TEXTURE2D(_BaseMap);
 TEXTURE2D(_MaskMap);
 TEXTURE2D(_NormalMap);
@@ -36,7 +39,9 @@ struct InputConfig
     float2 baseUV;
     float2 detailUV;
     float2 positionSS;
+    float2 screenUV;
     float depth;
+    float bufferDepth;
     bool useMask;
     bool useDetail; 
 };
@@ -47,8 +52,14 @@ InputConfig GetInputConfig(float4 positionSS, float2 baseUV, float2 detailUV = 0
     config.baseUV = baseUV;
     config.detailUV = detailUV;
     config.positionSS = positionSS.xy;
+    config.screenUV = positionSS.xy / _ScreenParams.xy;
     config.depth = IsOrthographicCamera() ?
-      OrtographicDepthBufferToLinear(positionSS.z) : positionSS.w;
+      OrthographicDepthBufferToLinear(positionSS.z) : positionSS.w;
+    config.bufferDepth = SAMPLE_DEPTH_TEXTURE_LOD(_CameraDepthTexture,
+      sampler_point_clamp, config.screenUV, 0);
+    config.bufferDepth = IsOrthographicCamera() ?
+      OrthographicDepthBufferToLinear(config.bufferDepth) :
+      LinearEyeDepth(config.bufferDepth, _ZBufferParams);
     config.useMask = false;
     config.useDetail = false;
     return config;

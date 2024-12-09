@@ -1,6 +1,9 @@
 #ifndef CUSTOM_UNLIT_INPUT_INCLUDED
 #define CUSTOM_UNLIT_INPUT_INCLUDED
 
+TEXTURE2D(_CameraDepthTexture);
+SAMPLER(sampler_point_clamp);
+
 TEXTURE2D(_BaseMap);
 TEXTURE2D(_MaskMap);
 SAMPLER(sampler_BaseMap);
@@ -14,6 +17,8 @@ UNITY_INSTANCING_BUFFER_START(UnityPerMaterial)
     UNITY_DEFINE_INSTANCED_PROP(float4, _BaseColor)
     UNITY_DEFINE_INSTANCED_PROP(float, _NearFadeDistance)
     UNITY_DEFINE_INSTANCED_PROP(float, _NearFadeRange)
+    UNITY_DEFINE_INSTANCED_PROP(float, _SoftParticlesDistance)
+    UNITY_DEFINE_INSTANCED_PROP(float, _SoftParticlesRange)
     UNITY_DEFINE_INSTANCED_PROP(float, _Cutoff)
     UNITY_DEFINE_INSTANCED_PROP(float, _ZWrite)
     UNITY_DEFINE_INSTANCED_PROP(float, _DetailAlbedo)
@@ -30,10 +35,13 @@ struct InputConfig
     float2 baseUV;
     float2 detailUV;
     float2 positionSS;
+    float2 screenUV;
     float depth;
+    float bufferDepth;
     bool useMask;
     bool useDetail;
     bool nearFade;
+    bool softParticles;
 };
 
 InputConfig GetInputConfig(float4 positionSS, float2 baseUV, float2 detailUV = 0)
@@ -45,11 +53,18 @@ InputConfig GetInputConfig(float4 positionSS, float2 baseUV, float2 detailUV = 0
     config.baseUV = baseUV;
     config.detailUV = detailUV;
     config.positionSS = positionSS.xy;
+    config.screenUV = positionSS.xy / _ScreenParams.xy;
     config.depth = IsOrthographicCamera() ?
-      OrtographicDepthBufferToLinear(positionSS.z) : positionSS.w;
+      OrthographicDepthBufferToLinear(positionSS.z) : positionSS.w;
+    config.bufferDepth = SAMPLE_DEPTH_TEXTURE_LOD(_CameraDepthTexture,
+      sampler_point_clamp, config.screenUV, 0);
+    config.bufferDepth = IsOrthographicCamera() ?
+      OrthographicDepthBufferToLinear(config.bufferDepth) :
+      LinearEyeDepth(config.bufferDepth, _ZBufferParams);
     config.useMask = false;
     config.useDetail = false;
     config.nearFade = false;
+    config.softParticles = false;
     return config;
 }
 
@@ -98,6 +113,13 @@ float4 GetBase(InputConfig config)
     {
         float nearAttenuation = (config.depth - INPUT_PROP(_NearFadeDistance)) / INPUT_PROP(_NearFadeRange);
         map.a *= saturate(nearAttenuation);
+    }
+  
+    if(config.softParticles)
+    {
+        float depthDelta = config.bufferDepth - config.depth;
+        float softAttenuation =(depthDelta - INPUT_PROP(_SoftParticlesDistance)) / INPUT_PROP(_SoftParticlesRange);
+        map.a *= saturate(softAttenuation);
     }
   
     float4 color = INPUT_PROP(_BaseColor);
