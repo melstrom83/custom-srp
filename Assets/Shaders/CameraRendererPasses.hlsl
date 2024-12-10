@@ -6,6 +6,7 @@
 
 TEXTURE2D(_SourceTexture);
 SAMPLER(sampler_linear_clamp);
+SAMPLER(sampler_point_clamp);
 
 struct Varying
 {
@@ -36,14 +37,14 @@ Varying DefaultPassVertex(uint vertexID : SV_VertexID)
     return varying;
 }
 
-float4 CopyPassFragment(Varying varying) : SV_Target
+float4 CopyPassFragment(Varying varying) : SV_TARGET
 {
     return SAMPLE_TEXTURE2D_LOD(_SourceTexture, sampler_linear_clamp, varying.screenUV, 0);
 }
 
-float4 CopyDepthPassFragment(Varying varying) : SV_Target
+float CopyDepthPassFragment(Varying varying) : SV_DEPTH
 {
-    return SAMPLE_DEPTH_TEXTURE2D_LOD(_SourceTexture, sampler_point_clamp, varying.screenUV, 0);
+    return SAMPLE_DEPTH_TEXTURE_LOD(_SourceTexture, sampler_point_clamp, varying.screenUV, 0);
 }
 
 #endif
