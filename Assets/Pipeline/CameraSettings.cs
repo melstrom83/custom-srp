@@ -10,6 +10,7 @@ public class CameraSettings
         public BlendMode src, dst;
     }
 
+    public bool copyColor = true;
     public bool copyDepth = true;
 
     public bool overridePostFX = false;

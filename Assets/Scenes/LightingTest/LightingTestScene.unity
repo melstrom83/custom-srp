@@ -1311,7 +1311,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0987f525b079f4742911ddabba276f47, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  baseColor: {r: 0.62095743, g: 0.4430868, b: 0.9396738, a: 1}
+  baseColor: {r: 0.22920457, g: 0.9232651, b: 0.5931023, a: 1}
   cutoff: 0.5
   metallic: 0.68
   smoothness: 0.8
@@ -1422,6 +1422,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   settings:
+    copyColor: 1
     copyDepth: 1
     overridePostFX: 1
     postFXSettings: {fileID: 0}
@@ -5682,7 +5683,7 @@ ParticleSystemRenderer:
   m_SortingOrder: 0
   m_RenderMode: 0
   m_MeshDistribution: 0
-  m_SortMode: 0
+  m_SortMode: 4
   m_MinParticleSize: 0
   m_MaxParticleSize: 0.5
   m_CameraVelocityScale: 0
@@ -10558,7 +10559,7 @@ Material:
     - _ZTest: 4
     - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 0.62095743, g: 0.4430868, b: 0.9396738, a: 1}
+    - _BaseColor: {r: 0.22920457, g: 0.9232651, b: 0.5931023, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
   m_BuildTextureStacks: []

@@ -9,7 +9,10 @@ Shader "CustomSRP/Partices/Unlit"
 		_Cutoff("Alpha Cutoff", Range(0.0, 1.0)) = 0.5
 		[Toggle(_CLIPPING)] _Clipping ("Alpha Clipping", Int) = 0
 		[Toggle(_MASK_MAP)] _MaskMapToogle ("Mask Map", Int) = 0
-		[NoScaleOffset] _MaskMap("Mask (MODS)", 2D) = "white" {}[Enum(UnityEngine.Rendering.BlendMode)] _SrcBlend ("Src Blend", Int) = 1
+		[NoScaleOffset] _MaskMap("Mask (MODS)", 2D) = "white" {}
+		[Toggle(_DISTORTION)] _Distortion ("Distortion", Int) = 0
+		[NoScaleOffset] _DistortionMap ("Distortion Vectors", 2D) = "bumb" {}
+		_DistortionStrength("Distortion Strength", Range(0.0, 0.2)) = 0.1
 		[Toggle(_DETAIL_MAP)] _DetailMapToogle ("Detail Map", Int) = 0
 		_DetailMap("Details", 2D) = "linearGrey" {}
 		_DetailAlbedo("Detail Albedo", Range(0.0, 1.0)) = 1
@@ -19,6 +22,7 @@ Shader "CustomSRP/Partices/Unlit"
 		[Toggle(_SOFT_PARTICLES)] _SoftParticles ("Soft Particles", Int) = 0
 		_SoftParticleDisctance("Soft Particle Distance", Range(0.0, 10.0)) = 0.0
 		_SoftParticleRange("Soft Particle Range", Range(0.0, 10.0)) = 1.0
+		[Enum(UnityEngine.Rendering.BlendMode)] _SrcBlend ("Src Blend", Int) = 1
 		[Enum(UnityEngine.Rendering.BlendMode)] _DstBlend ("Dst Blend", Int) = 0
 		[Enum(Off, 0, On, 1)] _ZWrite ("Z Write", Int) = 1
 		[Enum(UnityEngine.Rendering.CompareFunction)] _ZTest ("Z Test", Int) = 4
@@ -42,6 +46,7 @@ Shader "CustomSRP/Partices/Unlit"
 			#pragma shader_feature _FLIPBOOK_BLENDING
 			#pragma shader_feature _CLIPPING
 			#pragma shader_feature _MASK_MAP
+			#pragma shader_feature _DISTORTION
 			#pragma shader_feature _DETAIL_MAP
 			#pragma shader_feature _NEAR_FADE
 			#pragma shader_feature _SOFT_PARTICLES

@@ -32,8 +32,10 @@ MonoBehaviour:
   PostFXSettings: {fileID: 11400000, guid: 7c31070aae8ba37489af9e9ab184c2b1, type: 2}
   cameraBuffer:
     allowHDR: 1
+    copyColor: 1
+    copyColorReflection: 0
     copyDepth: 1
-    copyDepthReflection: 1
+    copyDepthReflection: 0
   colorLUTResolution: 32
   cameraRendererShader: {fileID: 4800000, guid: e447b581c99458b4d9f3f776ebd78ed3,
     type: 3}

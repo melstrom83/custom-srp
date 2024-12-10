@@ -1,12 +1,17 @@
 #ifndef CUSTOM_UNLIT_INPUT_INCLUDED
 #define CUSTOM_UNLIT_INPUT_INCLUDED
 
+TEXTURE2D(_CameraColorTexture);
+SAMPLER(sampler_linear_clamp);
+
 TEXTURE2D(_CameraDepthTexture);
 SAMPLER(sampler_point_clamp);
 
 TEXTURE2D(_BaseMap);
 TEXTURE2D(_MaskMap);
+TEXTURE2D(_DistortionMap);
 SAMPLER(sampler_BaseMap);
+SAMPLER(sampler_DistortionMap);
 
 TEXTURE2D(_DetailMap);
 SAMPLER(sampler_DetailMap);
@@ -15,6 +20,7 @@ UNITY_INSTANCING_BUFFER_START(UnityPerMaterial)
     UNITY_DEFINE_INSTANCED_PROP(float4, _BaseMap_ST)
     UNITY_DEFINE_INSTANCED_PROP(float4, _DetailMap_ST)
     UNITY_DEFINE_INSTANCED_PROP(float4, _BaseColor)
+    UNITY_DEFINE_INSTANCED_PROP(float, _DistortionStrength)
     UNITY_DEFINE_INSTANCED_PROP(float, _NearFadeDistance)
     UNITY_DEFINE_INSTANCED_PROP(float, _NearFadeRange)
     UNITY_DEFINE_INSTANCED_PROP(float, _SoftParticlesDistance)
@@ -78,6 +84,23 @@ float2 TransformDetailUV(float2 detailUV)
 {
     float4 detailST = INPUT_PROP(_DetailMap_ST);
     return detailUV * detailST.xy + detailST.zw;
+}
+
+float4 GetBufferColor(float2 uv, float2 offset = float2(0.0, 0.0))
+{
+    return SAMPLE_TEXTURE2D_LOD(_CameraColorTexture, sampler_linear_clamp, uv + offset, 0);
+}
+
+float2 GetDistortion(InputConfig config)
+{
+    float4 rawMap = SAMPLE_TEXTURE2D(_DistortionMap, sampler_DistortionMap, config.baseUV);
+    if (config.flipbookBlending)
+    {
+      rawMap = lerp(rawMap,
+              SAMPLE_TEXTURE2D(_DistortionMap, sampler_DistortionMap, config.flipbookUVB.xy),
+              config.flipbookUVB.z);
+    }
+    return DecodeNormal(rawMap, INPUT_PROP(_DistortionStrength)).xy;
 }
 
 float4 GetDetail(InputConfig config)
