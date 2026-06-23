@@ -28,6 +28,8 @@ float4 _SMHShadows, _SMHMidtones, _SMHHighlights, _SMHRange;
 float4 _ColorGradingLUTParameters;
 bool _ColorGradingLUTInLogC;
 
+bool _CopyBicubic;
+
 struct Varying
 {
     float4 positionCS : SV_POSITION;
@@ -315,11 +317,26 @@ float3 ApplyColorGradingLUT(float3 color)
   _ColorGradingLUTParameters.xyz);
 }
 
-float4 FinalPassFragment(Varying varying) : SV_Target
+float4 ApplyColorGradingPassFragment(Varying varying) : SV_Target
 {
     float4 color = GetSource(varying.screenUV);
     color.rgb = ApplyColorGradingLUT(color.rgb);
     return color;
+}
+
+float4 ApplyColorGradingWithLumaPassFragment(Varying varying) : SV_Target
+{
+    float4 color = GetSource(varying.screenUV);
+    color.rgb = ApplyColorGradingLUT(color.rgb);
+    color.a = sqrt(Luminance(color.rgb));
+    return color;
+}
+
+float4 FinalPassFragmentRescale(Varying varying) : SV_Target
+{
+    return _CopyBicubic 
+    ? GetSourceBicubic(varying.screenUV)
+    : GetSource(varying.screenUV);
 }
 
 #endif

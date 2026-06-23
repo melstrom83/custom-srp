@@ -4,6 +4,8 @@
 TEXTURE2D(_CameraDepthTexture);
 SAMPLER(sampler_point_clamp);
 
+float4 _CameraBufferSize;
+
 TEXTURE2D(_BaseMap);
 TEXTURE2D(_MaskMap);
 TEXTURE2D(_NormalMap);
@@ -52,7 +54,7 @@ InputConfig GetInputConfig(float4 positionSS, float2 baseUV, float2 detailUV = 0
     config.baseUV = baseUV;
     config.detailUV = detailUV;
     config.positionSS = positionSS.xy;
-    config.screenUV = positionSS.xy / _ScreenParams.xy;
+    config.screenUV = positionSS.xy * _CameraBufferSize.xy;
     config.depth = IsOrthographicCamera() ?
       OrthographicDepthBufferToLinear(positionSS.z) : positionSS.w;
     config.bufferDepth = SAMPLE_DEPTH_TEXTURE_LOD(_CameraDepthTexture,
