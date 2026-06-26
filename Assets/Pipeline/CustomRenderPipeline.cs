@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.RenderGraphModule;
 
 namespace Graphics
 {
@@ -15,6 +16,8 @@ namespace Graphics
         private ShadowSettings shadowSettings;
         private PostFXSettings postFXSettings;
         int colorLUTResolution;
+
+        readonly RenderGraph renderGraph = new("Custom SRP Rendcer Graph");
 
         partial void DisposeForEditor();
 
@@ -41,16 +44,22 @@ namespace Graphics
         {
             foreach (var camera in cameras)
             {
-                renderer.Render(context, camera, cameraBufferSettings, useDynamicBatching, useGPUInstancing,
+                renderer.Render(renderGraph, context, camera, cameraBufferSettings, 
+                    useDynamicBatching, useGPUInstancing,
                     shadowSettings, postFXSettings, colorLUTResolution);
             }
+
+            renderGraph.EndFrame();
         }
 
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
+            
             DisposeForEditor();
             renderer.Dispose();
+
+            renderGraph.Cleanup();
         }
     }
 }

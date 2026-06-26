@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.RenderGraphModule;
 
 namespace Graphics
 {
@@ -18,7 +19,7 @@ namespace Graphics
 
         private CullingResults cullingResults;
         private ScriptableRenderContext context;
-        private Camera camera;
+        public Camera camera;
 
         bool useHDR, useScaledRendering;
 
@@ -30,24 +31,24 @@ namespace Graphics
         //static int frameBufferId = Shader.PropertyToID("_CameraFrameBuffer");
 
         static int bufferSizeId = Shader.PropertyToID("_CameraBufferSize");
-        static int colorAttachmentId = Shader.PropertyToID("_CameraColorAttachment");
-        static int depthAttachmentId = Shader.PropertyToID("_CameraDepthAttachment");
+        public static int colorAttachmentId = Shader.PropertyToID("_CameraColorAttachment");
+        public static int depthAttachmentId = Shader.PropertyToID("_CameraDepthAttachment");
         static int colorTextureId = Shader.PropertyToID("_CameraColorTexture");
         static int depthTextureId = Shader.PropertyToID("_CameraDepthTexture");
         static int sourceTextureId = Shader.PropertyToID("_SourceTexture");
         
         partial void DrawUnsupportedShaders ();
-        partial void DrawGizmosBeforeFX();
-        partial void DrawGizmosAfterFX();
+        //partial void DrawGizmosBeforeFX();
+        //partial void DrawGizmosAfterFX();
         partial void PrepareForSceneWindow();
         partial void PrepareBuffer();
         
         Lighting lighting = new Lighting();
         PostFXStack postFXStack = new PostFXStack();
 
-        bool useColorTexture;
-        bool useDepthTexture;
-        bool useIntermediateBuffer;
+        public bool useColorTexture;
+        public bool useDepthTexture;
+        public bool useIntermediateBuffer;
 
         Material material;
         Texture2D missingTexture;
@@ -64,8 +65,8 @@ namespace Graphics
             missingTexture.Apply(true, true);
         }
         
-        public void Render(ScriptableRenderContext context, Camera camera,
-            CameraBufferSettings cameraBufferSettings,
+        public void Render(RenderGraph renderGraph, ScriptableRenderContext context, 
+            Camera camera, CameraBufferSettings cameraBufferSettings,
             bool useDynamicBatching, bool useGPUInstancing,
             ShadowSettings shadowSettings, PostFXSettings postFXSettings,
             int colorLUTResolution)
@@ -135,23 +136,48 @@ namespace Graphics
             Setup();
             DrawVisibleGeometry(useDynamicBatching, useGPUInstancing);
             DrawUnsupportedShaders();
-            DrawGizmosBeforeFX();
-            if(postFXStack.IsActive)
+            //DrawGizmosBeforeFX();
+            //if(postFXStack.IsActive)
+            //{
+            //    postFXStack.Render(colorAttachmentId);
+            //}
+            //else if(useIntermediateBuffer)
+            //{
+            //    Draw(colorAttachmentId, BuiltinRenderTextureType.CameraTarget);
+            //    ExecuteBuffer();
+            //}
+            //DrawGizmosAfterFX();
+
+            var renderGraphParameters = new RenderGraphParameters
             {
-                postFXStack.Render(colorAttachmentId);
-            }
-            else if(useIntermediateBuffer)
+                commandBuffer = CommandBufferPool.Get(),
+                currentFrameIndex = Time.frameCount,
+                //executionName = "Render Camera",
+                scriptableRenderContext = context
+            };
+            renderGraph.BeginRecording(renderGraphParameters);
             {
-                Draw(colorAttachmentId, BuiltinRenderTextureType.CameraTarget); ;
-                ExecuteBuffer();
+                if(postFXStack.IsActive)
+                {
+                    PostFXPass.Record(renderGraph, postFXStack);
+                }
+                else if(useIntermediateBuffer)
+                {
+                    FinalPass.Record(renderGraph, this, cameraSettings.finalBlendMode);
+                }
+                GizmosPass.Record(renderGraph, this);
             }
-            DrawGizmosAfterFX();
-            Cleanup();
+            renderGraph.EndRecordingAndExecute();
+
+            //context.ExecuteCommandBuffer(renderGraphParameters.commandBuffer);
+            //context.Submit();
+            CommandBufferPool.Release(renderGraphParameters.commandBuffer);
             
+            Cleanup();
             Submit();
         }
 
-        void Draw(RenderTargetIdentifier from, RenderTargetIdentifier to, bool isDepth = false)
+        public void Draw(RenderTargetIdentifier from, RenderTargetIdentifier to, bool isDepth = false)
         {
             buffer.SetGlobalTexture(sourceTextureId, from);
             buffer.SetRenderTarget(to, RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store);
@@ -203,7 +229,7 @@ namespace Graphics
             return false;
         }
         
-        void Setup()
+        public void Setup()
         {
             context.SetupCameraProperties(camera);
             CameraClearFlags flags = camera.clearFlags;
@@ -243,7 +269,7 @@ namespace Graphics
             ExecuteBuffer();
         }
 
-        void Cleanup()
+        public void Cleanup()
         {
             lighting.Cleanup();
             if (useIntermediateBuffer)
@@ -309,14 +335,14 @@ namespace Graphics
             }
         }
 
-        void Submit()
+        public void Submit()
         {
             buffer.EndSample(SampleName);
             ExecuteBuffer();
             context.Submit();
         }
         
-        void ExecuteBuffer()
+        public void ExecuteBuffer()
         {
             context.ExecuteCommandBuffer(buffer);
             buffer.Clear();
