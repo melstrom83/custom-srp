@@ -1,6 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.RenderGraphModule;
 using static PostFXSettings;
 
 enum Pass
@@ -25,11 +26,7 @@ enum Pass
 
 public partial class PostFXStack
 {
-    const string bufferName = "PostFX";
-    CommandBuffer buffer = new CommandBuffer()
-    {
-        name = bufferName,
-    };
+    CommandBuffer buffer;
 
     const int maxBloomPyramidLevels = 16;
 
@@ -68,7 +65,6 @@ public partial class PostFXStack
 
     int fxaaConfigId = Shader.PropertyToID("_FXAAConfig");
 
-    ScriptableRenderContext context;
     Camera camera;
     PostFXSettings settings;
     int bloomPyramidId;
@@ -148,7 +144,7 @@ public partial class PostFXStack
             smh.shadowsStart, smh.shadowsEnd, smh.highlightsStart, smh.highlightsEnd));
     }
 
-    public void Setup(ScriptableRenderContext context, Camera camera, Vector2Int bufferSize, 
+    public void Setup(Camera camera, Vector2Int bufferSize, 
     PostFXSettings settings, bool useHDR, int colorLUTResolution, 
     CameraSettings.FinalBlendMode finalBlendMode, bool keepAlpha,
     CameraBufferSettings.BicubicRescalingMode bicubicRescaling, 
@@ -159,7 +155,6 @@ public partial class PostFXStack
         this.bicubicRescaling = bicubicRescaling;
         this.fxaa = fxaa;
         this.bufferSize = bufferSize;
-        this.context = context;
         this.camera = camera;
         this.settings = camera.cameraType <= CameraType.SceneView ? settings : null;
         this.useHDR = useHDR;
@@ -168,8 +163,10 @@ public partial class PostFXStack
         ApplySceneViewState();
     }
 
-    public void Render(int sourceId)
+    public void Render(RenderGraphContext context, int sourceId)
     {
+        buffer = context.cmd;
+
         if(DoBloom(sourceId))
         {
             DoFinal(bloomResultId);
@@ -179,7 +176,7 @@ public partial class PostFXStack
         {
             DoFinal(sourceId);
         }
-        context.ExecuteCommandBuffer(buffer);
+        context.renderContext.ExecuteCommandBuffer(buffer);
         buffer.Clear();
     }
 

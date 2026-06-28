@@ -12,10 +12,7 @@ namespace Graphics
         
         static CameraSettings defaultCameraSettings = new CameraSettings();
 
-        private CommandBuffer buffer = new CommandBuffer
-        {
-            name = name
-        };
+        CommandBuffer buffer;
 
         private CullingResults cullingResults;
         private ScriptableRenderContext context;
@@ -37,11 +34,7 @@ namespace Graphics
         static int depthTextureId = Shader.PropertyToID("_CameraDepthTexture");
         static int sourceTextureId = Shader.PropertyToID("_SourceTexture");
         
-        partial void DrawUnsupportedShaders ();
-        //partial void DrawGizmosBeforeFX();
-        //partial void DrawGizmosAfterFX();
         partial void PrepareForSceneWindow();
-        partial void PrepareBuffer();
         
         Lighting lighting = new Lighting();
         PostFXStack postFXStack = new PostFXStack();
@@ -111,52 +104,41 @@ namespace Graphics
 
 
 
-            PrepareBuffer();
+            //PrepareBuffer();
             PrepareForSceneWindow();
             
             if (!Cull(shadowSettings.MaxDistance))
             {
                 return;
             }
-
-            buffer.BeginSample(SampleName);
-            buffer.SetGlobalVector(bufferSizeId, new Vector4(
-                1.0f / bufferSize.x, 1.0f / bufferSize.y,
-                bufferSize.x, bufferSize.y
-            ));
-            ExecuteBuffer();
-            lighting.Setup(context, cullingResults, shadowSettings);
+            
+            //ExecuteBuffer();
+            //lighting.Setup(context, cullingResults, shadowSettings);
             
             //cameraBufferSettings.fxaa.enabled &= cameraSettings.allowFXAA;
-            postFXStack.Setup(context, camera, bufferSize, postFXSettings,
+            postFXStack.Setup(camera, bufferSize, postFXSettings,
             useHDR, colorLUTResolution, 
             cameraSettings.finalBlendMode, cameraSettings.keepAlpha,
             cameraBufferSettings.bicubicRescaling, cameraBufferSettings.fxaa);
-            buffer.EndSample(SampleName);
-            Setup();
-            DrawVisibleGeometry(useDynamicBatching, useGPUInstancing);
-            DrawUnsupportedShaders();
-            //DrawGizmosBeforeFX();
-            //if(postFXStack.IsActive)
-            //{
-            //    postFXStack.Render(colorAttachmentId);
-            //}
-            //else if(useIntermediateBuffer)
-            //{
-            //    Draw(colorAttachmentId, BuiltinRenderTextureType.CameraTarget);
-            //    ExecuteBuffer();
-            //}
-            //DrawGizmosAfterFX();
+
+            useIntermediateBuffer = useScaledRendering ||
+                useColorTexture || useDepthTexture || postFXStack.IsActive;
 
             var renderGraphParameters = new RenderGraphParameters
             {
                 commandBuffer = CommandBufferPool.Get(),
                 currentFrameIndex = Time.frameCount,
-                //executionName = "Render Camera",
                 scriptableRenderContext = context
             };
+            buffer = renderGraphParameters.commandBuffer;
+
+
             renderGraph.BeginRecording(renderGraphParameters);
             {
+                LightingPass.Record(renderGraph, lighting, cullingResults, shadowSettings);
+                SetupPass.Record(renderGraph, this);
+                VisibleGeometryPass.Record(renderGraph, this, useDynamicBatching, useGPUInstancing);
+                UnsupportedShadersPass.Record(renderGraph, this);
                 if(postFXStack.IsActive)
                 {
                     PostFXPass.Record(renderGraph, postFXStack);
@@ -169,8 +151,8 @@ namespace Graphics
             }
             renderGraph.EndRecordingAndExecute();
 
-            //context.ExecuteCommandBuffer(renderGraphParameters.commandBuffer);
-            //context.Submit();
+            context.ExecuteCommandBuffer(renderGraphParameters.commandBuffer);
+            context.Submit();
             CommandBufferPool.Release(renderGraphParameters.commandBuffer);
             
             Cleanup();
@@ -184,8 +166,10 @@ namespace Graphics
             buffer.DrawProcedural(Matrix4x4.identity, material, isDepth ? 1 : 0, MeshTopology.Triangles, 3);
         }
 
-        void DrawVisibleGeometry(bool useDynamicBatching, bool useGPUInstancing)
+        public void DrawVisibleGeometry(bool useDynamicBatching, bool useGPUInstancing)
         {
+            ExecuteBuffer();
+
             var sortingSettings = new SortingSettings(camera)
             {
                 criteria = SortingCriteria.CommonOpaque
@@ -234,9 +218,6 @@ namespace Graphics
             context.SetupCameraProperties(camera);
             CameraClearFlags flags = camera.clearFlags;
 
-            useIntermediateBuffer = useScaledRendering ||
-                useColorTexture || useDepthTexture || postFXStack.IsActive;
-
             if (useIntermediateBuffer)
             {
                 if(flags > CameraClearFlags.Color)
@@ -263,9 +244,10 @@ namespace Graphics
                 flags <= CameraClearFlags.Depth,
                 flags == CameraClearFlags.Color,
                 flags == CameraClearFlags.Color ? camera.backgroundColor : Color.clear);
-            buffer.BeginSample(SampleName);
             buffer.SetGlobalTexture(colorTextureId, missingTexture); 
             buffer.SetGlobalTexture(depthTextureId, missingTexture);
+            buffer.SetGlobalVector(bufferSizeId, new Vector4(
+                1.0f / bufferSize.x, 1.0f / bufferSize.y, bufferSize.x, bufferSize.y));
             ExecuteBuffer();
         }
 
@@ -337,7 +319,6 @@ namespace Graphics
 
         public void Submit()
         {
-            buffer.EndSample(SampleName);
             ExecuteBuffer();
             context.Submit();
         }

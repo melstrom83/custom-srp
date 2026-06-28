@@ -21,9 +21,9 @@ namespace Graphics
 
         private static Material _errorMaterial;
         
-        private string SampleName { set; get; }
+        //private string SampleName { set; get; }
 
-        partial void DrawUnsupportedShaders()
+        public void DrawUnsupportedShaders()
         {
             if (_errorMaterial == null)
             {
@@ -54,14 +54,14 @@ namespace Graphics
             }
         }
 
-        partial void PrepareBuffer()
-        {
-            Profiler.BeginSample("Editor Only");
-            buffer.name = SampleName = camera.name;
-            Profiler.EndSample();
-        }
-#else
-        const string SampleName = name;
+        //partial void PrepareBuffer()
+        //{
+        //    Profiler.BeginSample("Editor Only");
+        //    buffer.name = SampleName = camera.name;
+        //    Profiler.EndSample();
+        //}
+//#else
+//        const string SampleName = name;
 #endif
     }
 }

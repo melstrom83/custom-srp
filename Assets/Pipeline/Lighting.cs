@@ -1,13 +1,13 @@
 using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.RenderGraphModule;
 
 namespace Graphics
 {
     public class Lighting
     {
-        private const string _bufferName = "Lighting";
-        private CullingResults _cullingResults;
+        private CullingResults cullingResults;
 
         private const int directionalLightLimit = 4;
         private const int additionalLightLimit = 64;
@@ -37,22 +37,19 @@ namespace Graphics
         private static Vector4[] additionalLightShadowData = new Vector4[additionalLightLimit];
 
 
-        private CommandBuffer buffer = new CommandBuffer
-        {
-            name = _bufferName
-        };
+        CommandBuffer buffer;
 
-        public void Setup(ScriptableRenderContext context, CullingResults cullingResults, 
+        public void Setup(RenderGraphContext context, CullingResults cullingResults, 
             ShadowSettings shadowSettings)
         {
-            _cullingResults = cullingResults;
-            buffer.BeginSample(_bufferName);
+            this.cullingResults = cullingResults;
+            buffer = context.cmd;
+
             //SetupDirectionalLight();
             shadows.Setup(context, cullingResults, shadowSettings);
             SetupLights();
             shadows.Render();
-            buffer.EndSample(_bufferName);
-            context.ExecuteCommandBuffer(buffer);
+            context.renderContext.ExecuteCommandBuffer(buffer);
             buffer.Clear();
         }
 
@@ -92,7 +89,7 @@ namespace Graphics
 
         void SetupLights()
         {
-            NativeArray<VisibleLight> visibleLights = _cullingResults.visibleLights;
+            NativeArray<VisibleLight> visibleLights = cullingResults.visibleLights;
 
             var directionalLightCount = 0;
             var additionalLightCount = 0;
