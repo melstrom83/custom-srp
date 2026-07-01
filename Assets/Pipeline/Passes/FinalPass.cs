@@ -5,6 +5,7 @@ namespace Graphics
 {
     public class FinalPass
     {
+        static readonly ProfilingSampler sampler = new("Final");
         CameraRenderer renderer;
 
         CameraSettings.FinalBlendMode finalBlendMode;
@@ -20,7 +21,7 @@ namespace Graphics
             CameraRenderer renderer,
             CameraSettings.FinalBlendMode finalBlendMode)
         {
-            using var builder = renderGraph.AddRenderPass("Final", out FinalPass pass);
+            using var builder = renderGraph.AddRenderPass(sampler.name, out FinalPass pass, sampler);
             pass.renderer = renderer;
             pass.finalBlendMode = finalBlendMode;
             builder.SetRenderFunc<FinalPass>((pass, context) => pass.Render(context));

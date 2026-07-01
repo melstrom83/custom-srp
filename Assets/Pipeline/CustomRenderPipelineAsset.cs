@@ -8,8 +8,6 @@ namespace Graphics
     [CreateAssetMenu(menuName = "Rendering/Custom Render Pipeline")]
     public class CustomRenderPipelineAsset : RenderPipelineAsset
     {
-        public bool UseDynamicBatching = true;
-        public bool UseGPUInstancing = true;
         public bool UseSRPBatcher = true;
 
         [SerializeField] 
@@ -42,9 +40,16 @@ namespace Graphics
         [SerializeField]
         Shader cameraRendererShader = default;
 
+        [Header("Deprecated Settings")]
+        [SerializeField, Tooltip("Dynamic batching is no longer used.")]
+        bool useDynamicBatching;
+
+        [SerializeField, Tooltip("GPU instancing is always enabled.")]
+        bool useGPUInstancing;
+
         protected override RenderPipeline CreatePipeline()
         {
-            return new CustomRenderPipeline(cameraBuffer, UseDynamicBatching, UseGPUInstancing, UseSRPBatcher,
+            return new CustomRenderPipeline(cameraBuffer, UseSRPBatcher,
                 ShadowSettings, PostFXSettings, (int)colorLUTResolution, cameraRendererShader);
         }
     }

@@ -10,6 +10,8 @@ namespace Graphics
     public class GizmosPass
     {
     #if UNITY_EDITOR
+        static readonly ProfilingSampler sampler = new("Gizmos");
+
         CameraRenderer renderer;
 
         void Render(RenderGraphContext context)
@@ -30,7 +32,7 @@ namespace Graphics
     #if UNITY_EDITOR
             if(Handles.ShouldRenderGizmos())
             {
-                using var builder = renderGraph.AddRenderPass("Gizmos", out GizmosPass pass);
+                using var builder = renderGraph.AddRenderPass(sampler.name, out GizmosPass pass, sampler);
                 pass.renderer = renderer;
                 builder.SetRenderFunc<GizmosPass>((pass, context) => pass.Render(context));
             }

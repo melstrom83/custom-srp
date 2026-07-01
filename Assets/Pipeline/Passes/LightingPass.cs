@@ -5,6 +5,7 @@ namespace Graphics
 {
     public class LightingPass
     {
+        static readonly ProfilingSampler sampler = new("Lighting");
         Lighting lighting;
         CullingResults cullingResults;
         ShadowSettings shadowSettings;
@@ -17,7 +18,7 @@ namespace Graphics
         public static void Record(RenderGraph renderGraph, Lighting lighting,
             CullingResults cullingResults, ShadowSettings shadowSettings)
         {
-            using var builder = renderGraph.AddRenderPass("Lighting", out LightingPass pass);
+            using var builder = renderGraph.AddRenderPass(sampler.name, out LightingPass pass, sampler);
             pass.lighting = lighting;
             pass.cullingResults = cullingResults;
             pass.shadowSettings = shadowSettings;

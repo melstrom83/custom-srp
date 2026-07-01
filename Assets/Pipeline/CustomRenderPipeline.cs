@@ -11,8 +11,6 @@ namespace Graphics
         private CameraRenderer renderer; // = new CameraRenderer();
 
         CameraBufferSettings cameraBufferSettings;
-        private bool useDynamicBatching;
-        private bool useGPUInstancing;
         private ShadowSettings shadowSettings;
         private PostFXSettings postFXSettings;
         int colorLUTResolution;
@@ -22,12 +20,10 @@ namespace Graphics
         partial void DisposeForEditor();
 
         public CustomRenderPipeline(CameraBufferSettings cameraBufferSettings,
-            bool useDynamicBatching, bool useGPUInstancing, bool useSRPBatching,
+            bool useSRPBatching,
             ShadowSettings shadowSettings, PostFXSettings postFXSettings, int colorLUTResolution, Shader cameraRendererShader)
         {
             this.cameraBufferSettings = cameraBufferSettings;
-            this.useDynamicBatching = useDynamicBatching;
-            this.useGPUInstancing = useGPUInstancing;
             GraphicsSettings.useScriptableRenderPipelineBatching = useSRPBatching;
             GraphicsSettings.lightsUseLinearIntensity = true;
 
@@ -44,8 +40,7 @@ namespace Graphics
         {
             foreach (var camera in cameras)
             {
-                renderer.Render(renderGraph, context, camera, cameraBufferSettings, 
-                    useDynamicBatching, useGPUInstancing,
+                renderer.Render(renderGraph, context, camera, cameraBufferSettings,
                     shadowSettings, postFXSettings, colorLUTResolution);
             }
 

@@ -57,18 +57,28 @@ namespace Graphics
             missingTexture.SetPixel(0, 0, Color.gray);
             missingTexture.Apply(true, true);
         }
+
+
         
         public void Render(RenderGraph renderGraph, ScriptableRenderContext context, 
             Camera camera, CameraBufferSettings cameraBufferSettings,
-            bool useDynamicBatching, bool useGPUInstancing,
             ShadowSettings shadowSettings, PostFXSettings postFXSettings,
             int colorLUTResolution)
         {
             this.camera = camera;
             this.context = context;
 
-            var crpCamera = camera.GetComponent<CustomRenderPipelineCamera>();
-            var cameraSettings = crpCamera ? crpCamera.Settings : defaultCameraSettings;
+
+            ProfilingSampler cameraSampler = ProfilingSampler.Get(camera.cameraType);
+            CameraSettings cameraSettings = defaultCameraSettings;
+            
+            if(camera.TryGetComponent(out CustomRenderPipelineCamera crpCamera))
+            {
+                cameraSampler = crpCamera.Sampler;
+                cameraSettings = crpCamera.Settings;
+            }
+
+
 
             //useDepthTexture = true;
             if(camera.cameraType == CameraType.Reflection)
@@ -128,6 +138,8 @@ namespace Graphics
             {
                 commandBuffer = CommandBufferPool.Get(),
                 currentFrameIndex = Time.frameCount,
+                executionName = cameraSampler.name,
+                rendererListCulling = true,
                 scriptableRenderContext = context
             };
             buffer = renderGraphParameters.commandBuffer;
@@ -135,10 +147,17 @@ namespace Graphics
 
             renderGraph.BeginRecording(renderGraphParameters);
             {
+                using var _ = new RenderGraphProfilingScope(renderGraph, cameraSampler);
                 LightingPass.Record(renderGraph, lighting, cullingResults, shadowSettings);
                 SetupPass.Record(renderGraph, this);
-                VisibleGeometryPass.Record(renderGraph, this, useDynamicBatching, useGPUInstancing);
-                UnsupportedShadersPass.Record(renderGraph, this);
+                GeometryPass.Record(renderGraph, camera, cullingResults, true);
+                SkyboxPass.Record(renderGraph, camera);
+                if(useColorTexture || useDepthTexture)
+                {
+                    CopyAttachmentsPass.Record(renderGraph, this);
+                }
+                GeometryPass.Record(renderGraph, camera, cullingResults, false);
+                UnsupportedShadersPass.Record(renderGraph, camera, cullingResults);
                 if(postFXStack.IsActive)
                 {
                     PostFXPass.Record(renderGraph, postFXStack);
@@ -164,41 +183,6 @@ namespace Graphics
             buffer.SetGlobalTexture(sourceTextureId, from);
             buffer.SetRenderTarget(to, RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store);
             buffer.DrawProcedural(Matrix4x4.identity, material, isDepth ? 1 : 0, MeshTopology.Triangles, 3);
-        }
-
-        public void DrawVisibleGeometry(bool useDynamicBatching, bool useGPUInstancing)
-        {
-            ExecuteBuffer();
-
-            var sortingSettings = new SortingSettings(camera)
-            {
-                criteria = SortingCriteria.CommonOpaque
-            };
-            var drawingSettings = new DrawingSettings(unlitShaderTagId, sortingSettings)
-            {
-                enableDynamicBatching = useDynamicBatching,
-                enableInstancing = useGPUInstancing,
-                perObjectData = PerObjectData.None
-                | PerObjectData.ReflectionProbes
-                | PerObjectData.Lightmaps | PerObjectData.ShadowMask
-                | PerObjectData.LightProbe | PerObjectData.OcclusionProbe
-                | PerObjectData.LightProbeProxyVolume | PerObjectData.OcclusionProbeProxyVolume
-            };
-            drawingSettings.SetShaderPassName(1, litShaderTagId);
-            var filteringSettings = new FilteringSettings(RenderQueueRange.opaque);
-            context.DrawRenderers(cullingResults, ref drawingSettings, ref filteringSettings);
-
-            context.DrawSkybox(camera);
-
-            if (useColorTexture || useDepthTexture)
-            {
-                CopyAttachments();
-            }
-
-            sortingSettings.criteria = SortingCriteria.CommonTransparent;
-            drawingSettings.sortingSettings = sortingSettings;
-            filteringSettings.renderQueueRange = RenderQueueRange.transparent;
-            context.DrawRenderers(cullingResults, ref drawingSettings, ref filteringSettings);
         }
 
         bool Cull(float maxShadowDistance)
@@ -271,8 +255,10 @@ namespace Graphics
             }
         }
 
-        void CopyAttachments()
+        public void CopyAttachments()
         {
+            ExecuteBuffer();
+
             if(useColorTexture)
             {
                 buffer.GetTemporaryRT(colorTextureId, bufferSize.x, bufferSize.y,
