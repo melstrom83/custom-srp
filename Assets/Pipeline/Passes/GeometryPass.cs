@@ -25,8 +25,12 @@ namespace Graphics
             context.cmd.Clear();
         }
 
-        public static void Record(RenderGraph renderGraph, 
-            Camera camera, CullingResults cullingResults, bool opaque)
+        public static void Record(
+            RenderGraph renderGraph, 
+            Camera camera, 
+            CullingResults cullingResults, 
+            bool opaque,
+            in CameraRendererTextures textures)
         {
             var sampler = opaque ? samplerOpaque : samplerTransparent;
             using var builder = renderGraph.AddRenderPass(sampler.name, out GeometryPass pass, sampler);
@@ -46,6 +50,22 @@ namespace Graphics
                         ? RenderQueueRange.opaque
                         : RenderQueueRange.transparent
                 }));
+
+            builder.ReadWriteTexture(textures.colorAttachment);
+            builder.ReadWriteTexture(textures.depthAttachment);
+
+            if(!opaque)
+            {
+                if(textures.colorCopy.IsValid())
+                {
+                    builder.ReadTexture(textures.colorCopy);
+                }
+
+                if(textures.depthCopy.IsValid())
+                {
+                    builder.ReadTexture(textures.depthCopy);
+                }
+            }
 
             builder.SetRenderFunc<GeometryPass>((pass, context) => pass.Render(context));
         }

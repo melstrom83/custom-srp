@@ -5,19 +5,24 @@ namespace Graphics
 {
     public class PostFXPass
     {
-    PostFXStack postFXStack;
+        static readonly ProfilingSampler sampler = new("Post FX");
+        PostFXStack postFXStack;
+
+        TextureHandle colorAttachment;
 
         void Render(RenderGraphContext context)
         {
-            postFXStack.Render(context, CameraRenderer.colorAttachmentId);
+            postFXStack.Render(context, colorAttachment);
         }
 
         public static void Record(
             RenderGraph renderGraph,
-            PostFXStack postFXStack)
+            PostFXStack postFXStack,
+            in CameraRendererTextures textures)
         {
-            using var builder = renderGraph.AddRenderPass("Post FX", out PostFXPass pass);
+            using var builder = renderGraph.AddRenderPass(sampler.name, out PostFXPass pass, sampler);
             pass.postFXStack = postFXStack;
+            pass.colorAttachment = builder.ReadTexture(textures.colorAttachment);
             builder.SetRenderFunc<PostFXPass>((pass, context) => pass.Render(context));
         }
     }

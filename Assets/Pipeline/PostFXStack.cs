@@ -163,7 +163,7 @@ public partial class PostFXStack
         ApplySceneViewState();
     }
 
-    public void Render(RenderGraphContext context, int sourceId)
+    public void Render(RenderGraphContext context, TextureHandle sourceId)
     {
         buffer = context.cmd;
 
@@ -180,7 +180,7 @@ public partial class PostFXStack
         buffer.Clear();
     }
 
-    bool DoBloom(int sourceId)
+    bool DoBloom(RenderTargetIdentifier sourceId)
     {
         var bloom = settings.Bloom;
         var width = bloom.ignoreRenderScale ? camera.pixelWidth / 2 : bufferSize.x / 2;
@@ -284,7 +284,7 @@ public partial class PostFXStack
         return true;
     }
 
-    void DoFinal(int sourceId)
+    void DoFinal(RenderTargetIdentifier sourceId)
     {
         ConfigureColorAdjustments();
         ConfigureWhiteBalance();
