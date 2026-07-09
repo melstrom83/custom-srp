@@ -10,6 +10,8 @@ namespace Graphics
 
         private ShadowSettings shadowSettings;
 
+        TextureHandle directionalAtlas, additionalAtlas;
+
         private static readonly int directionalShadowAtlasId = Shader.PropertyToID("_DirectionalShadowAtlas");
         private static readonly int directionalShadowMatricesId = Shader.PropertyToID("_DirectionalShadowMatrices");
         private static readonly int additionalShadowAtlasId = Shader.PropertyToID("_AdditionalShadowAtlas");
@@ -61,24 +63,24 @@ namespace Graphics
         private readonly ShadowedAdditionalLight[] ShadowedAdditionalLights =
             new ShadowedAdditionalLight[shadowedAdditionalLightLimit];
 
-        private static readonly string[] directionalFilterKeywords =
+        static readonly GlobalKeyword[] directionalFilterKeywords =
         {
-            "_DIRECTIONAL_PCF3",
-            "_DIRECTIONAL_PCF5",
-            "_DIRECTIONAL_PCF7",
+            GlobalKeyword.Create("_DIRECTIONAL_PCF3"),
+            GlobalKeyword.Create("_DIRECTIONAL_PCF5"),
+            GlobalKeyword.Create("_DIRECTIONAL_PCF7"),
         };
 
-        private static readonly string[] additionalFilterKeywords =
+        static readonly GlobalKeyword[] additionalFilterKeywords =
         {
-            "_ADDITIONAL_PCF3",
-            "_ADDITIONAL_PCF5",
-            "_ADDITIONAL_PCF7",
+            GlobalKeyword.Create("_ADDITIONAL_PCF3"),
+            GlobalKeyword.Create("_ADDITIONAL_PCF5"),
+            GlobalKeyword.Create("_ADDITIONAL_PCF7"),
         };
 
-        private static readonly string[] shadowMasKeywords =
+        static readonly GlobalKeyword[] shadowMasKeywords =
         {
-            "_SHADOW_MASK_ALWAYS",
-            "_SHADOW_MASK_DISTANCE"
+            GlobalKeyword.Create("_SHADOW_MASK_ALWAYS"),
+            GlobalKeyword.Create("_SHADOW_MASK_DISTANCE")
         };
 
         private bool useShadowMask;
@@ -87,6 +89,31 @@ namespace Graphics
 
 
         CommandBuffer buffer;
+
+        public ShadowTextures GetRenderTextures(
+            RenderGraph renderGraph,
+            RenderGraphBuilder builder)
+        {
+            var atlasSize = (int)shadowSettings.directional.atlasSize;
+            var desc = new TextureDesc(atlasSize, atlasSize)
+            {
+                depthBufferBits = DepthBits.Depth32,
+                isShadowMap = true,
+                name = "Directional Shadow Atlas"
+            };
+            directionalAtlas = shadowedDirectionalLightCount > 0
+                ? builder.WriteTexture(renderGraph.CreateTexture(desc))
+                : renderGraph.defaultResources.defaultShadowTexture;
+
+            atlasSize = (int)shadowSettings.additional.atlasSize;
+            desc.width = desc.height = atlasSize;
+            desc.name = "Additional Shadow Atlas";
+            additionalAtlas = shadowedAdditionalLightCount > 0
+                ? builder.WriteTexture(renderGraph.CreateTexture(desc))
+                : renderGraph.defaultResources.defaultShadowTexture;
+
+            return new ShadowTextures(directionalAtlas, additionalAtlas);
+        }
 
         public Vector4 ReserveDirectionalShadows(Light light, int visibleLightIndex)
         {
@@ -163,47 +190,50 @@ namespace Graphics
             return data;
         }
 
-        public void Setup(RenderGraphContext context,
-            CullingResults cullingResults,
+        public void Setup(CullingResults cullingResults,
             ShadowSettings shadowSettings)
         {
             shadowedDirectionalLightCount = 0;
             shadowedAdditionalLightCount = 0;
             useShadowMask = false;
             
-            this.context = context.renderContext;
             this.shadowSettings = shadowSettings;
             this.cullingResults = cullingResults;
-
-            buffer = context.cmd;
         }
 
-        private void SetKeywords(string[] keywords, int enabledIndex) 
+        private void SetKeywords(GlobalKeyword[] keywords, int enabledIndex) 
         {
             for (var i = 0; i < keywords.Length; ++i)
             {
-                if (i == enabledIndex)
-                {
-                    buffer.EnableShaderKeyword(keywords[i]);
-                }
-                else
-                {
-                    buffer.DisableShaderKeyword(keywords[i]);
-                }
+                //if (i == enabledIndex)
+                //{
+                //    buffer.EnableShaderKeyword(keywords[i]);
+                //}
+                //else
+                //{
+                //    buffer.DisableShaderKeyword(keywords[i]);
+                //}
+                buffer.SetKeyword(keywords[i], i == enabledIndex);
             }
         }
 
-        public void Render()
+        public void Render(RenderGraphContext context)
         {
+            buffer = context.cmd;
+            this.context = context.renderContext;
+
             if(shadowedDirectionalLightCount > 0)
             {
                 RenderDirectionalShadows();
             }
+            buffer.SetGlobalTexture(directionalShadowAtlasId, directionalAtlas);
 
             if (shadowedAdditionalLightCount > 0)
             {
                 RenderAdditionalShadows();
             }
+            buffer.SetGlobalTexture(additionalShadowAtlasId, additionalAtlas);
+
 
             SetKeywords(shadowMasKeywords, useShadowMask ? 
                 QualitySettings.shadowmaskMode == ShadowmaskMode.Shadowmask ?
@@ -285,17 +315,8 @@ namespace Graphics
                     FilterMode.Bilinear,
                     RenderTextureFormat.Shadowmap);
             }
-            else
-            {
-                buffer.GetTemporaryRT(directionalShadowAtlasId,
-                    1,
-                    1,
-                    32,
-                    FilterMode.Bilinear,
-                    RenderTextureFormat.Shadowmap);
-            }
 
-            buffer.SetRenderTarget(directionalShadowAtlasId,
+            buffer.SetRenderTarget(directionalAtlas,
                 RenderBufferLoadAction.DontCare,
                 RenderBufferStoreAction.Store);
             buffer.ClearRenderTarget(true, false, Color.clear, 1.0f);
@@ -377,17 +398,8 @@ namespace Graphics
                     FilterMode.Bilinear,
                     RenderTextureFormat.Shadowmap);
             }
-            else
-            {
-                buffer.GetTemporaryRT(additionalShadowAtlasId,
-                    1,
-                    1,
-                    32,
-                    FilterMode.Bilinear,
-                    RenderTextureFormat.Shadowmap);
-            }
 
-            buffer.SetRenderTarget(additionalShadowAtlasId,
+            buffer.SetRenderTarget(additionalAtlas,
                 RenderBufferLoadAction.DontCare,
                 RenderBufferStoreAction.Store);
             buffer.ClearRenderTarget(true, false, Color.clear, 1.0f);
@@ -490,13 +502,6 @@ namespace Graphics
             data.z = scale - border - border;
             data.w = bias;
             additionalShadowTiles[index] = data;
-        }
-
-        public void Cleanup()
-        {
-            buffer.ReleaseTemporaryRT(directionalShadowAtlasId);
-            buffer.ReleaseTemporaryRT(additionalShadowAtlasId);
-            ExecuteBuffer();
         }
 
         private void ExecuteBuffer()

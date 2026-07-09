@@ -5,25 +5,6 @@ using UnityEngine;
 
 namespace Graphics
 {
-    public readonly ref struct CameraRendererTextures
-    {
-        public readonly TextureHandle
-            colorAttachment, depthAttachment,
-            colorCopy, depthCopy;
-
-        public CameraRendererTextures(
-            TextureHandle colorAttachment,
-            TextureHandle depthAttachment,
-            TextureHandle colorCopy,
-            TextureHandle depthCopy)
-        {
-            this.colorAttachment = colorAttachment;
-            this.depthAttachment = depthAttachment;
-            this.colorCopy = colorCopy;
-            this.depthCopy = depthCopy;
-        }
-    }
-
     public class SetupPass
     {
         static readonly ProfilingSampler sampler = new("Setup");

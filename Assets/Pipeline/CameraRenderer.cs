@@ -21,7 +21,6 @@ namespace Graphics
         static int depthTextureId = Shader.PropertyToID("_CameraDepthTexture");
         static int sourceTextureId = Shader.PropertyToID("_SourceTexture");
         
-        Lighting lighting = new Lighting();
         PostFXStack postFXStack = new PostFXStack();
 
         Material material;
@@ -116,15 +115,15 @@ namespace Graphics
             renderGraph.BeginRecording(renderGraphParameters);
             {
                 using var _ = new RenderGraphProfilingScope(renderGraph, cameraSampler);
-                LightingPass.Record(renderGraph, lighting, cullingResults, shadowSettings);
+                var shadowTextures = LightingPass.Record(renderGraph, cullingResults, shadowSettings);
                 var textures = SetupPass.Record(renderGraph, useIntermediateBuffer, 
                     useColorTexture, useDepthTexture, useHDR, bufferSize, camera);
-                GeometryPass.Record(renderGraph, camera, cullingResults, true, textures);
+                GeometryPass.Record(renderGraph, camera, cullingResults, true, textures, shadowTextures);
                 SkyboxPass.Record(renderGraph, camera, textures);
                 var copier = new CameraRendererCopier(material, camera, cameraSettings.finalBlendMode);
                 CopyAttachmentsPass.Record(renderGraph,
                     useColorTexture, useDepthTexture, copier, textures);
-                GeometryPass.Record(renderGraph, camera, cullingResults, false, textures);
+                GeometryPass.Record(renderGraph, camera, cullingResults, false, textures, shadowTextures);
                 UnsupportedShadersPass.Record(renderGraph, camera, cullingResults);
                 if(postFXStack.IsActive)
                 {
@@ -137,10 +136,6 @@ namespace Graphics
                 GizmosPass.Record(renderGraph, useIntermediateBuffer, copier, textures);
             }
             renderGraph.EndRecordingAndExecute();
-
-
-            
-            lighting.Cleanup();
 
             context.ExecuteCommandBuffer(renderGraphParameters.commandBuffer);
             context.Submit();
