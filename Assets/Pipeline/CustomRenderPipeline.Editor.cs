@@ -17,7 +17,7 @@ namespace Graphics
         }
 
         static Lightmapping.RequestLightsDelegate lightDelegate =
-            (Light[] lights, NativeArray<LightDataGI> output) =>
+            static (Light[] lights, NativeArray<LightDataGI> output) =>
             {
                 var lightData = new LightDataGI();
                 for(var i = 0;  i < lights.Length; ++i)

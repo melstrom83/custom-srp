@@ -19,7 +19,7 @@ namespace Graphics
         void Render(RenderGraphContext context)
         {
             var buffer = context.cmd;
-            
+
             if(requiresDepthCopy)
             {
                 copier.CopyByDrawing(buffer, depthAttachment, BuiltinRenderTextureType.CameraTarget, true);
@@ -48,7 +48,7 @@ namespace Graphics
                 {
                     pass.depthAttachment = builder.ReadTexture(textures.depthAttachment);
                 }
-                builder.SetRenderFunc<GizmosPass>((pass, context) => pass.Render(context));
+                builder.SetRenderFunc<GizmosPass>(static (pass, context) => pass.Render(context));
             }
     #endif
         }

@@ -49,7 +49,7 @@ namespace Graphics
                 }));
 
             //pass.renderer = renderer;
-            builder.SetRenderFunc<UnsupportedShadersPass>((pass, context) => pass.Render(context));
+            builder.SetRenderFunc<UnsupportedShadersPass>(static (pass, context) => pass.Render(context));
     #endif
         }
     }

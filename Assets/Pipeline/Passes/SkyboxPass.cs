@@ -31,7 +31,7 @@ namespace Graphics
                 pass.camera = camera;
                 builder.ReadWriteTexture(textures.colorAttachment);
                 builder.ReadTexture(textures.depthAttachment);
-                builder.SetRenderFunc<SkyboxPass>((pass, context) => pass.Render(context));
+                builder.SetRenderFunc<SkyboxPass>(static (pass, context) => pass.Render(context));
             }
         }
     }

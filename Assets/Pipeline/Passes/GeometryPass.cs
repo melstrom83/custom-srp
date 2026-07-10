@@ -70,7 +70,7 @@ namespace Graphics
 
             builder.ReadTexture(shadowTextures.directionalAtlas);
             builder.ReadTexture(shadowTextures.additionalAtlas);
-            builder.SetRenderFunc<GeometryPass>((pass, context) => pass.Render(context));
+            builder.SetRenderFunc<GeometryPass>(static (pass, context) => pass.Render(context));
         }
     }
 }

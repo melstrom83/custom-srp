@@ -28,10 +28,7 @@ namespace Graphics
 
         public CameraRenderer(Shader shader) =>
             material = CoreUtils.CreateEngineMaterial(shader);
-        
-
-
-        
+          
         public void Render(
             RenderGraph renderGraph, 
             ScriptableRenderContext context, 
@@ -67,7 +64,11 @@ namespace Graphics
                 postFXSettings = cameraSettings.postFXSettings;
             }
 
-            var useHDR = cameraBufferSettings.allowHDR && camera.allowHDR;
+            bool hasActivePostFX = 
+                postFXSettings != null && PostFXSettings.AreApplicableTo(camera);
+
+            cameraBufferSettings.allowHDR &= camera.allowHDR;
+            
             var renderScale = cameraBufferSettings.renderScale;
             var useScaledRendering = renderScale < 0.99f || renderScale > 1.01f;
 
@@ -92,16 +93,17 @@ namespace Graphics
                 Mathf.Min(shadowSettings.MaxDistance, camera.farClipPlane);
             var cullingResults = context.Cull(ref scriptableCullingParameters);
 
-
-            
-            postFXStack.Setup(camera, bufferSize, postFXSettings,
-                useHDR, colorLUTResolution, 
-                cameraSettings.finalBlendMode, cameraSettings.keepAlpha,
-                cameraBufferSettings.bicubicRescaling, cameraBufferSettings.fxaa
-            );
+            if(hasActivePostFX)
+            {
+                postFXStack.BufferSettings = cameraBufferSettings;
+                postFXStack.BufferSize = bufferSize;
+                postFXStack.Camera = camera;
+                postFXStack.FinalBlendMode = cameraSettings.finalBlendMode;
+                postFXStack.Settings = postFXSettings;
+            }
 
             bool useIntermediateBuffer = useScaledRendering ||
-                useColorTexture || useDepthTexture || postFXStack.IsActive;
+                useColorTexture || useDepthTexture || hasActivePostFX;
 
             var renderGraphParameters = new RenderGraphParameters
             {
@@ -117,7 +119,7 @@ namespace Graphics
                 using var _ = new RenderGraphProfilingScope(renderGraph, cameraSampler);
                 var shadowTextures = LightingPass.Record(renderGraph, cullingResults, shadowSettings);
                 var textures = SetupPass.Record(renderGraph, useIntermediateBuffer, 
-                    useColorTexture, useDepthTexture, useHDR, bufferSize, camera);
+                    useColorTexture, useDepthTexture, cameraBufferSettings.allowHDR, bufferSize, camera);
                 GeometryPass.Record(renderGraph, camera, cullingResults, true, textures, shadowTextures);
                 SkyboxPass.Record(renderGraph, camera, textures);
                 var copier = new CameraRendererCopier(material, camera, cameraSettings.finalBlendMode);
@@ -125,9 +127,10 @@ namespace Graphics
                     useColorTexture, useDepthTexture, copier, textures);
                 GeometryPass.Record(renderGraph, camera, cullingResults, false, textures, shadowTextures);
                 UnsupportedShadersPass.Record(renderGraph, camera, cullingResults);
-                if(postFXStack.IsActive)
+                if(hasActivePostFX)
                 {
-                    PostFXPass.Record(renderGraph, postFXStack, textures);
+                    PostFXPass.Record(renderGraph, postFXStack, colorLUTResolution, 
+                        cameraSettings.keepAlpha, textures);
                 }
                 else if(useIntermediateBuffer)
                 {
