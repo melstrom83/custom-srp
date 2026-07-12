@@ -10,38 +10,28 @@ namespace Graphics
     {
         private CameraRenderer renderer; // = new CameraRenderer();
 
-        CameraBufferSettings cameraBufferSettings;
-        private ShadowSettings shadowSettings;
-        private PostFXSettings postFXSettings;
-        int colorLUTResolution;
+        readonly CustomRenderPipelineSettings settings;
 
         readonly RenderGraph renderGraph = new("Custom SRP Rendcer Graph");
 
         partial void DisposeForEditor();
 
-        public CustomRenderPipeline(CameraBufferSettings cameraBufferSettings,
-            bool useSRPBatching,
-            ShadowSettings shadowSettings, PostFXSettings postFXSettings, int colorLUTResolution, Shader cameraRendererShader)
+        public CustomRenderPipeline(CustomRenderPipelineSettings settings)
         {
-            this.cameraBufferSettings = cameraBufferSettings;
-            GraphicsSettings.useScriptableRenderPipelineBatching = useSRPBatching;
+            this.settings = settings;
+            GraphicsSettings.useScriptableRenderPipelineBatching = true;
             GraphicsSettings.lightsUseLinearIntensity = true;
-
-            this.shadowSettings = shadowSettings;
-            this.postFXSettings = postFXSettings;
-            this.colorLUTResolution = colorLUTResolution;
 
             InitializeForEditor();
 
-            renderer = new CameraRenderer(cameraRendererShader);
+            renderer = new CameraRenderer(settings.cameraRendererShader);
         }
 
         protected override void Render(ScriptableRenderContext context, Camera[] cameras)
         {
             foreach (var camera in cameras)
             {
-                renderer.Render(renderGraph, context, camera, cameraBufferSettings,
-                    shadowSettings, postFXSettings, colorLUTResolution);
+                renderer.Render(renderGraph, context, camera, settings);
             }
 
             renderGraph.EndFrame();

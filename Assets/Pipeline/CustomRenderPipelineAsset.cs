@@ -8,15 +8,20 @@ namespace Graphics
     [CreateAssetMenu(menuName = "Rendering/Custom Render Pipeline")]
     public class CustomRenderPipelineAsset : RenderPipelineAsset
     {
-        public bool UseSRPBatcher = true;
-
-        [SerializeField] 
-        ShadowSettings ShadowSettings = default;
+        //public bool UseSRPBatcher = true;
 
         [SerializeField]
-        PostFXSettings PostFXSettings = default;
+        CustomRenderPipelineSettings settings;
 
-        [SerializeField]
+        [Header("Deprecated Settings")]
+
+        [SerializeField, Tooltip("Moved to settings")] 
+        ShadowSettings shadowSettings = default;
+
+        [SerializeField, Tooltip("Moved to settings")]
+        PostFXSettings postFXSettings = default;
+
+        [SerializeField, Tooltip("Moved to settings")]
         CameraBufferSettings cameraBuffer = new CameraBufferSettings
         { 
             renderScale = 1.0f,
@@ -34,23 +39,28 @@ namespace Graphics
             _16 = 16, _32 = 32, _64 = 64,
         }
 
-        [SerializeField]
+        [SerializeField, Tooltip("Moved to settings")]
         ColorLUTResolution colorLUTResolution = ColorLUTResolution._32;
 
-        [SerializeField]
+        [SerializeField, Tooltip("Moved to settings")]
         Shader cameraRendererShader = default;
 
-        [Header("Deprecated Settings")]
-        [SerializeField, Tooltip("Dynamic batching is no longer used.")]
-        bool useDynamicBatching;
-
-        [SerializeField, Tooltip("GPU instancing is always enabled.")]
-        bool useGPUInstancing;
 
         protected override RenderPipeline CreatePipeline()
         {
-            return new CustomRenderPipeline(cameraBuffer, UseSRPBatcher,
-                ShadowSettings, PostFXSettings, (int)colorLUTResolution, cameraRendererShader);
+            if((settings == null || settings.cameraRendererShader == null) &&
+                cameraRendererShader != null)
+            {
+                settings = new CustomRenderPipelineSettings
+                {
+                    cameraBuffer = cameraBuffer,
+                    shadowSettings = shadowSettings,
+                    postFXSettings = postFXSettings,
+                    colorLUTResolution = (CustomRenderPipelineSettings.ColorLUTResolution)colorLUTResolution,
+                    cameraRendererShader = cameraRendererShader
+                };
+            }
+            return new CustomRenderPipeline(settings);
         }
     }
 }

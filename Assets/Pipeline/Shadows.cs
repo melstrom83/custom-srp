@@ -205,14 +205,6 @@ namespace Graphics
         {
             for (var i = 0; i < keywords.Length; ++i)
             {
-                //if (i == enabledIndex)
-                //{
-                //    buffer.EnableShaderKeyword(keywords[i]);
-                //}
-                //else
-                //{
-                //    buffer.DisableShaderKeyword(keywords[i]);
-                //}
                 buffer.SetKeyword(keywords[i], i == enabledIndex);
             }
         }

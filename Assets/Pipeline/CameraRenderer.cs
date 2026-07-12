@@ -33,13 +33,14 @@ namespace Graphics
             RenderGraph renderGraph, 
             ScriptableRenderContext context, 
             Camera camera, 
-            CameraBufferSettings cameraBufferSettings,
-            ShadowSettings shadowSettings, 
-            PostFXSettings postFXSettings,
-            int colorLUTResolution)
+            CustomRenderPipelineSettings settings)
         {
             ProfilingSampler cameraSampler = ProfilingSampler.Get(camera.cameraType);
             CameraSettings cameraSettings = defaultCameraSettings;
+
+            var cameraBufferSettings = settings.cameraBuffer;
+            var shadowSettings = settings.shadowSettings; 
+            var postFXSettings = settings.postFXSettings;
             
             if(camera.TryGetComponent(out CustomRenderPipelineCamera crpCamera))
             {
@@ -129,7 +130,7 @@ namespace Graphics
                 UnsupportedShadersPass.Record(renderGraph, camera, cullingResults);
                 if(hasActivePostFX)
                 {
-                    PostFXPass.Record(renderGraph, postFXStack, colorLUTResolution, 
+                    PostFXPass.Record(renderGraph, postFXStack, (int)settings.colorLUTResolution, 
                         cameraSettings.keepAlpha, textures);
                 }
                 else if(useIntermediateBuffer)
