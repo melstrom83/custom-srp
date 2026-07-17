@@ -25,9 +25,9 @@
     #define ADDITIONAL_FILTER_SETUP SampleShadow_ComputeSamples_Tent_7x7
 #endif
 
-#define SHADOWED_DIRECTIONAL_LIGHT_LIMIT 4
-#define CASCADE_LIMIT 4
-#define SHADOWED_ADDITIONAL_LIGHT_LIMIT 16
+//#define SHADOWED_DIRECTIONAL_LIGHT_LIMIT 4
+//#define CASCADE_LIMIT 4
+//#define SHADOWED_ADDITIONAL_LIGHT_LIMIT 16
 
 TEXTURE2D_SHADOW(_DirectionalShadowAtlas);
 TEXTURE2D_SHADOW(_AdditionalShadowAtlas);
@@ -36,14 +36,29 @@ SAMPLER_CMP(SHADOW_SAMPLER);
 
 CBUFFER_START(_CustomShadows)
     int _CascadeCount;
-    float4 _CascadeCullingSpheres[CASCADE_LIMIT];
-    float4 _CascadeData[CASCADE_LIMIT]; //x - 1.0 / (radius * radius), y - texelSize * sqrt(2.0)
-    float4x4 _DirectionalShadowMatrices[SHADOWED_DIRECTIONAL_LIGHT_LIMIT * CASCADE_LIMIT];
-    float4x4 _AdditionalShadowMatrices[SHADOWED_ADDITIONAL_LIGHT_LIMIT * CASCADE_LIMIT];
-    float4 _AdditionalShadowTiles[SHADOWED_ADDITIONAL_LIGHT_LIMIT];
+    //float4 _CascadeCullingSpheres[CASCADE_LIMIT];
+    //float4 _CascadeData[CASCADE_LIMIT]; //x - 1.0 / (radius * radius), y - texelSize * sqrt(2.0)
+    //float4x4 _DirectionalShadowMatrices[SHADOWED_DIRECTIONAL_LIGHT_LIMIT * CASCADE_LIMIT];
+    //float4x4 _AdditionalShadowMatrices[SHADOWED_ADDITIONAL_LIGHT_LIMIT * CASCADE_LIMIT];
+    //float4 _AdditionalShadowTiles[SHADOWED_ADDITIONAL_LIGHT_LIMIT];
     float4 _ShadowAtlasSize;
     float4 _ShadowDistanceFade;
 CBUFFER_END
+
+struct DirectionalShadowCascade
+{
+    float4 cullingSphere, data;
+};
+StructuredBuffer<DirectionalShadowCascade> _DirectionalShadowCascades;
+
+StructuredBuffer<float4x4> _DirectionalShadowMatrices;
+
+struct AdditionalShadowBufferData
+{
+    float4 tileData;
+    float4x4 shadowMatrix;
+};
+StructuredBuffer<AdditionalShadowBufferData> _AdditionalShadowData;
 
 struct DirectionalShadowData
 {
@@ -154,14 +169,15 @@ ShadowData GetShadowData(Surface surfaceWS)
     int i = 0;
     for(i = 0; i < _CascadeCount; ++i)
     {
-        float4 sphere = _CascadeCullingSpheres[i];
-        float distanceSqr = DistanceSquared(surfaceWS.position, sphere.xyz);
-        if(distanceSqr < sphere.w)
+        //float4 sphere = _CascadeCullingSpheres[i];
+        DirectionalShadowCascade cascade = _DirectionalShadowCascades[i];
+        float distanceSqr = DistanceSquared(surfaceWS.position, cascade.cullingSphere.xyz);
+        if(distanceSqr < cascade.cullingSphere.w)
         {
             if(i == _CascadeCount - 1)
             {
                 data.strength *= FadedShadowStrength(distanceSqr,
-                    _CascadeData[i].x, _ShadowDistanceFade.z);
+                    cascade.data.x, _ShadowDistanceFade.z);
             }
             break;
         }
@@ -180,7 +196,8 @@ float GetCascadedShadow(DirectionalShadowData directional,
     ShadowData global, Surface surfaceWS)
 {
     float3 normalBias = surfaceWS.interpolatedNormal *
-          (directional.normalBias * _CascadeData[global.cascadeIndex].y);
+            (directional.normalBias *
+             _DirectionalShadowCascades[global.cascadeIndex].data.y);
     float4 positionSTS = mul(
           _DirectionalShadowMatrices[directional.tileIndex],
           float4(surfaceWS.position /*+ normalBias*/, 1.0));
@@ -262,14 +279,14 @@ float GetAdditionalShadow(AdditionalShadowData additional,
         tileIndex += faceOffset;
         lightPlane = pointShadowPlanes[faceOffset];
     }
-    float4 tileData = _AdditionalShadowTiles[tileIndex];
+    AdditionalShadowBufferData data = _AdditionalShadowData[tileIndex];
     float3 surfaceToLight = additional.lightPositionWS - surfaceWS.position;
     float distanceToLightPlane = dot(surfaceToLight, lightPlane);
-    float3 normalBias = surfaceWS.interpolatedNormal * (distanceToLightPlane * tileData.w);
+    float3 normalBias = surfaceWS.interpolatedNormal * (distanceToLightPlane * data.tileData.w);
     float4 positionSTS = mul(
-        _AdditionalShadowMatrices[tileIndex],
+        data.shadowMatrix,
         float4(surfaceWS.position /*+ normalBias*/, 1.0));
-    return FilterAdditionalShadow(positionSTS.xyz / positionSTS.w, tileData.xyz);
+    return FilterAdditionalShadow(positionSTS.xyz / positionSTS.w, data.tileData.xyz);
 }
 
 float GetAdditionalShadowAttenuation(AdditionalShadowData additional,

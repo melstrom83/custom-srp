@@ -31,7 +31,7 @@ namespace Graphics
             CullingResults cullingResults, 
             bool opaque,
             in CameraRendererTextures textures,
-            in ShadowTextures shadowTextures)
+            in LightResources lightResources)
         {
             var sampler = opaque ? samplerOpaque : samplerTransparent;
             using var builder = renderGraph.AddRenderPass(sampler.name, out GeometryPass pass, sampler);
@@ -68,8 +68,13 @@ namespace Graphics
                 }
             }
 
-            builder.ReadTexture(shadowTextures.directionalAtlas);
-            builder.ReadTexture(shadowTextures.additionalAtlas);
+            builder.ReadBuffer(lightResources.directionalLightDataBuffer);
+            builder.ReadBuffer(lightResources.additionalLightDataBuffer);
+            builder.ReadTexture(lightResources.shadowResources.directionalAtlas);
+            builder.ReadTexture(lightResources.shadowResources.additionalAtlas);
+            builder.ReadBuffer(lightResources.shadowResources.directionalShadowCascadesBuffer);
+            builder.ReadBuffer(lightResources.shadowResources.directionalShadowMatricesBuffer);
+            builder.ReadBuffer(lightResources.shadowResources.additionalShadowDataBuffer);
             builder.SetRenderFunc<GeometryPass>(static (pass, context) => pass.Render(context));
         }
     }

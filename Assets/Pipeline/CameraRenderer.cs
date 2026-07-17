@@ -118,15 +118,15 @@ namespace Graphics
             renderGraph.BeginRecording(renderGraphParameters);
             {
                 using var _ = new RenderGraphProfilingScope(renderGraph, cameraSampler);
-                var shadowTextures = LightingPass.Record(renderGraph, cullingResults, shadowSettings);
+                var lightResources = LightingPass.Record(renderGraph, cullingResults, shadowSettings);
                 var textures = SetupPass.Record(renderGraph, useIntermediateBuffer, 
                     useColorTexture, useDepthTexture, cameraBufferSettings.allowHDR, bufferSize, camera);
-                GeometryPass.Record(renderGraph, camera, cullingResults, true, textures, shadowTextures);
+                GeometryPass.Record(renderGraph, camera, cullingResults, true, textures, lightResources);
                 SkyboxPass.Record(renderGraph, camera, textures);
                 var copier = new CameraRendererCopier(material, camera, cameraSettings.finalBlendMode);
                 CopyAttachmentsPass.Record(renderGraph,
                     useColorTexture, useDepthTexture, copier, textures);
-                GeometryPass.Record(renderGraph, camera, cullingResults, false, textures, shadowTextures);
+                GeometryPass.Record(renderGraph, camera, cullingResults, false, textures, lightResources);
                 UnsupportedShadersPass.Record(renderGraph, camera, cullingResults);
                 if(hasActivePostFX)
                 {

@@ -49,7 +49,7 @@ Shader "CustomSRP/Lit"
 			ZTest [_ZTest]
 			
 			HLSLPROGRAM
-			#pragma target 3.5
+			#pragma target 4.5
 			#pragma shader_feature _CLIPPING
 			#pragma shader_feature _RECEIVE_SHADOWS
 			#pragma shader_feature _MASK_MAP
@@ -77,7 +77,7 @@ Shader "CustomSRP/Lit"
 			Cull Front
 			
 			HLSLPROGRAM
-			#pragma target 3.5
+			#pragma target 4.5
 			#pragma shader_feature _CLIPPING
 			#pragma multi_compile_instancing
 			#pragma vertex ShadowCasterPassVertex
@@ -95,7 +95,7 @@ Shader "CustomSRP/Lit"
 
 			Cull Off
 			HLSLPROGRAM
-			#pragma target 3.5
+			#pragma target 4.5
 			#pragma vertex MetaPassVertex
 			#pragma fragment MetaPassFragment
 			#include "MetaPass.hlsl"
